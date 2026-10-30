@@ -8,7 +8,7 @@ import {Palabras, tamQueCabe, urb, cas, EstiloTexto} from './kit';
 
 export type Titulo = {etiqueta?: string; gruesa: string; remate?: string; rojas?: string[]};
 export type Caja = {left: number; top: number; width: number; align: 'left' | 'right' | 'center'; donde: string};
-export type PiezaTitulo = {a: number; b: number; caja: Caja; titulo: Titulo; estilo?: EstiloTexto | null};
+export type PiezaTitulo = {a: number; b: number; caja: Caja; titulo: Titulo; estilo?: EstiloTexto | null; acento?: string | null};
 
 /* un título en su caja: etiqueta, gruesa y remate escalonados; al salir se desenfoca y se apaga en 0,25 s */
 export const UnTitulo: React.FC<{t: number; pz: PiezaTitulo}> = ({t, pz}) => {
@@ -27,8 +27,8 @@ export const UnTitulo: React.FC<{t: number; pz: PiezaTitulo}> = ({t, pz}) => {
     <div style={{position: 'absolute', left: caja.left, top: caja.top, width: caja.width, textAlign: caja.align,
       opacity: 1 - sale, filter: sale > 0 ? `blur(${sale * 16}px)` : undefined}}>
       {titulo.etiqueta && <Palabras t={t} a={aE} texto={titulo.etiqueta} tipo="etiqueta" estilo={est} tam={arriba ? 34 : 28} alinear={caja.align} style={{marginBottom: 10}} />}
-      <Palabras t={t} a={aG} texto={titulo.gruesa} rojas={titulo.rojas} estilo={est} tam={tamG} alinear={caja.align} />
-      {titulo.remate && <Palabras t={t} a={aR} texto={titulo.remate} tipo="remate" estilo={est} tam={tamR} alinear={caja.align} style={{marginTop: 12}} />}
+      <Palabras t={t} a={aG} texto={titulo.gruesa} rojas={titulo.rojas} estilo={est} acento={pz.acento} tam={tamG} alinear={caja.align} />
+      {titulo.remate && <Palabras t={t} a={aR} texto={titulo.remate} tipo="remate" estilo={est} acento={pz.acento} tam={tamR} alinear={caja.align} style={{marginTop: 12}} />}
     </div>
   );
 };

@@ -1856,9 +1856,48 @@
     else if (x.tx.gruesa) cambiarCV(it, { titulo: null }).then(() => aviso('Título quitado. Ctrl + Z lo devuelve'));
     else aviso('Este momento no tiene nada que quitar');
   }
+  /* (30-oct) Tú hablando → lámina (así también se arman láminas seguidas a mano): el título pasa a ser su texto */
+  function aLamina(it, dice) {
+    const tx = it.cv.tx || {}, gr = tx.gruesa || String(dice || '').split(/\s+/).filter(Boolean).slice(0, 3).join(' ');
+    cambiarCV(it, { tipo: 'lamina', texto: { chica: tx.etiqueta || '', gruesa: gr, rojas: tx.rojas || [] }, objeto: { tipo: 'clip' } });
+  }
+  /* Qué lleva la lámina. Un gráfico nuevo arranca con los datos de ejemplo de la ficha, para cambiarlos abajo */
+  function llevarCV(it, tipo) {
+    const x = it.cv, o = x.obj || {};
+    if (tipo === 'imagen') {
+      if (o.tipo !== 'imagen') cambiarCV(it, { objeto: { tipo: 'imagen', es: x.pide || '', ve: o.ve || '' } });
+      if (!x.img) aviso('Créala o súbela en «Las imágenes de tu video»');
+    } else if (tipo === 'clip') {
+      if (x.img) C.cvVivo.dejarVideo({ i: x.i });
+      if (o.tipo !== 'clip') cambiarCV(it, { objeto: { tipo: 'clip' } });
+    } else if (o.tipo !== 'grafico') {
+      const g = C.cvVivo.graficosFicha()[0];
+      if (g) cambiarCV(it, { objeto: Object.assign({ tipo: 'grafico', grafico: g.id }, g.ejemplo || {}) }); else aviso('Un momento, cargando los gráficos…');
+    }
+  }
+  /* El gráfico de la lámina y sus datos: los campos salen de la ficha (una línea por cada elemento de una lista) */
+  function camposGrafico(it) {
+    const x = it.cv, o = x.obj || {}, lista = C.cvVivo.graficosFicha(), g = lista.find((q) => q.id === o.grafico);
+    const guardar = (cambio) => cambiarCV(it, { objeto: Object.assign({}, o, cambio) });
+    const entrada = (c) => {
+      const lineas = c.lista, barras = c.k === 'barras', actual = o[c.k];
+      const val = barras ? (actual || []).map((b) => b.k + ': ' + b.v).join('\n') : lineas ? (actual || []).join('\n') : actual == null ? '' : String(actual);
+      const leer = (v) => { const t = v.trim();
+        if (barras) return t.split('\n').map((l) => { const a = l.split(':'); return { k: a.slice(0, -1).join(':').trim(), v: Number(String(a[a.length - 1]).replace(/[^\d.-]/g, '')) }; }).filter((b) => b.k && isFinite(b.v));
+        if (lineas) return t.split('\n').map((l) => l.trim()).filter(Boolean);
+        if (c.num) { const n = Number(t.replace(/[^\d.-]/g, '')); return t && isFinite(n) ? n : undefined; }
+        return t; };
+      return prop(c.etq || c.k, h(lineas ? 'textarea' : 'input', Object.assign(lineas ? { rows: 3 } : { type: 'text' }, { class: 'mn-in', 'aria-label': c.etq || c.k, value: val, placeholder: c.ayuda || '',
+        onFocus: () => { U.escribiendo = true; },
+        onBlur: (e) => { U.escribiendo = false; if (e.target.value !== val) guardar({ [c.k]: leer(e.target.value) }); else if (U.sucio) { U.sucio = false; setTimeout(() => { firmaP = ''; pintarPanel(); }, 0); } },
+        onKeydown: (e) => { if (e.key === 'Enter' && !lineas) e.target.blur(); } })));
+    };
+    const elegir = prop('Gráfico', h('select', { class: 'mn-in', 'aria-label': 'Gráfico', onChange: (e) => { const n = lista.find((q) => q.id === e.target.value); if (n) cambiarCV(it, { objeto: Object.assign({ tipo: 'grafico', grafico: n.id }, n.ejemplo || {}) }); } },
+      lista.map((q) => h('option', { value: q.id, selected: q.id === o.grafico }, q.nombre || q.id))));
+    return [elegir].concat(g ? (g.campos || []).filter((c) => c.etq).map(entrada) : []).flat();
+  }
   function panelCV(it) {
     const x = it.cv, tx = x.tx || {}, dice = textoDe(x.desde, x.hasta);
-    const obj = { grafico: 'Gráfico', imagen: 'Imagen', video: 'Tu video en el recuadro' }[x.objeto];
     const guardarTexto = (cambio) => (x.lamina ? cambiarCV(it, { texto: Object.assign({}, tx, cambio) }) : cambiarCV(it, { titulo: Object.assign({}, tx, cambio) }));
     const campo = (etq, k) => prop(etq, h('input', { type: 'text', class: 'mn-in', maxlength: '60', value: tx[k] || '', 'aria-label': etq, placeholder: k === 'gruesa' && !x.lamina ? 'Sin título' : 'Vacío',
       onFocus: () => { U.escribiendo = true; },
@@ -1876,7 +1915,12 @@
         x.lamina ? null : campo('Debajo', 'remate'),
         palabras.length ? prop('En rojo', h('div', { class: 'mn-chips' }, palabras.map((w, n) => chip(w, rojas.indexOf(w.toLowerCase()) >= 0, () => tocarRoja(w), { key: n })))) : null,
         x.lamina ? null : prop('Cámara', h('div', { class: 'mn-chips' }, CAMARAS_CV.map((c) => chip(c[1], x.camara === c[0], () => { if (x.camara !== c[0]) cambiarCV(it, { camara: c[0], camaraFija: true }); }, { title: c[2] })))),
-        obj ? prop('Lleva', h('span', { class: 'mn-val' }, obj)) : null,
+        prop('Es', h('div', { class: 'mn-chips' }, chip('Tú hablando', !x.lamina, () => { if (x.lamina) quitarCV(it); }), chip('Lámina', x.lamina, () => { if (!x.lamina) aLamina(it, dice); }))),
+        x.lamina ? prop('Lleva', h('div', { class: 'mn-chips' },
+          chip('Imagen', x.objeto === 'imagen' || (x.obj || {}).tipo === 'imagen', () => llevarCV(it, 'imagen')),
+          chip('Tu clip', x.objeto === 'video' && (x.obj || {}).tipo !== 'imagen', () => llevarCV(it, 'clip')),
+          chip('Gráfico', x.objeto === 'grafico', () => llevarCV(it, 'grafico')))) : null,
+        ...(x.objeto === 'grafico' ? camposGrafico(it) : []),
         prop('Dices', h('span', { class: 'mn-val mn-val--cita', title: dice }, '«' + dice + '»'))),
       x.lamina || tx.gruesa ? h('div', { class: 'mn-fila-acc' }, accion('quitar', x.lamina ? 'Quitar esta lámina' : 'Quitar el título', () => quitarCV(it), 'mn-ac--chico')) : null);
   }
@@ -2044,6 +2088,7 @@
     return h('div', { style: { display: 'grid', gap: '14px' } },
       tarjeta('Cámara viva', e.texto, e.cargando ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Armando…') : null),
       CVV.panelEstiloTitulos(),
+      CVV.panelAcento(),
       CVV.panelImagenes(),
       h('div', { class: 'mn-campo' }, h('span', null, 'Fondo de las láminas'),
         h('div', { class: 'mn-chips' }, CVV.FONDOS.map((f) => chip([punto(f.hex), f.name], fondo === f.id, () => { CVV.cambiarAjustes({ grafFondoCV: f.id || null }); firmaP = ''; pintarPanel(); })))),

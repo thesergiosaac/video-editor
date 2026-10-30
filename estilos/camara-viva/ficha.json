@@ -1,10 +1,18 @@
 {
   "id": "camara_viva",
   "nombre": "Cámara viva",
-  "version": 4,
+  "version": 5,
   "descripcion": "La cámara se acerca a ti y te corre a un lado mientras tu título entra al lado de tu cara; entre frase y frase, láminas simples: un fondo de color con la sombra de una persiana, UN objeto (una imagen, tu video en un recuadro o un gráfico) y dos líneas de texto. Menos es más.",
-  "letras": { "gruesa": "Urbanist ExtraBold", "chica": "Urbanist SemiBold", "remate": "Libre Caslon Text Italic", "acento": "#9B111E" },
-  "fondo": { "defecto": "#ECE4D6", "d": "crema; la persona puede escoger otro color para todo el video" },
+  "letras": {
+    "gruesa": "Urbanist ExtraBold",
+    "chica": "Urbanist SemiBold",
+    "remate": "Libre Caslon Text Italic",
+    "acento": "#9B111E"
+  },
+  "fondo": {
+    "defecto": "#ECE4D6",
+    "d": "crema; la persona puede escoger otro color para todo el video"
+  },
   "hablando": {
     "para": "Tú hablando a cámara: un tramo CORTO (1,5 a 4 s) con UNA frase; la cámara se acerca en curva y te corre a un lado, el título entra al lado de tu cara (o arriba) y corte.",
     "camaras": {
@@ -13,42 +21,519 @@
       "suave": "acercamiento lento ×1,14; el título va arriba (o sin título si la frase es de paso)"
     },
     "campos": [
-      { "k": "etiqueta", "max": 24, "d": "1 a 4 palabras chicas en mayúsculas encima (opcional)" },
-      { "k": "gruesa", "max": 18, "d": "1 a 3 palabras protagonistas, en minúscula (obligatoria si hay título)" },
-      { "k": "remate", "max": 26, "d": "2 a 4 palabras en itálica debajo (opcional)" },
-      { "k": "rojas", "lista": true, "max": 2, "d": "palabras de la gruesa o del remate que van en rojo (0 a 2)" }
+      {
+        "k": "etiqueta",
+        "max": 24,
+        "d": "1 a 4 palabras chicas en mayúsculas encima (opcional)"
+      },
+      {
+        "k": "gruesa",
+        "max": 18,
+        "d": "1 a 3 palabras protagonistas, en minúscula (obligatoria si hay título)"
+      },
+      {
+        "k": "remate",
+        "max": 26,
+        "d": "2 a 4 palabras en itálica debajo (opcional)"
+      },
+      {
+        "k": "rojas",
+        "lista": true,
+        "max": 2,
+        "d": "palabras de la gruesa o del remate que van en rojo (0 a 2)"
+      }
     ]
   },
   "lamina": {
     "para": "Pantalla completa: el fondo de color con la sombra de la persiana, UN objeto que entra con la cámara y dos líneas de texto arriba (una chica y una gruesa). Nunca una lámina sin objeto.",
-    "dura": [1.2, 3.8],
+    "dura": [
+      1.2,
+      3.8
+    ],
     "campos": [
-      { "k": "chica", "max": 34, "d": "una línea chica de contexto, 2 a 6 palabras" },
-      { "k": "gruesa", "max": 18, "d": "1 a 3 palabras protagonistas, en minúscula" },
-      { "k": "rojas", "lista": true, "max": 1, "d": "la palabra de la gruesa que va en rojo (0 o 1)" }
+      {
+        "k": "chica",
+        "max": 34,
+        "d": "una línea chica de contexto, 2 a 6 palabras"
+      },
+      {
+        "k": "gruesa",
+        "max": 18,
+        "d": "1 a 3 palabras protagonistas, en minúscula"
+      },
+      {
+        "k": "rojas",
+        "lista": true,
+        "max": 1,
+        "d": "la palabra de la gruesa que va en rojo (0 o 1)"
+      }
     ],
     "objetos": [
-      { "id": "imagen", "para": "UN objeto o figura que DICE lo que dice la frase (una escultura para «armar algo tuyo», un reloj para «horas», un cofre para un secreto). Se recorta y queda con su sombra. Cuesta: úsala solo cuando hay algo concreto que mostrar.", "imagen": { "tipo": "objeto" } },
-      { "id": "clip", "para": "tu propio video, más pequeño, en un recuadro de esquinas redondas con sombra: cuando la frase habla de un video, de ti, de alguien hablando, o no hay un objeto claro" },
-      { "id": "grafico", "para": "una tarjeta blanca animada, SOLO cuando lo que dices la pide",
+      {
+        "id": "imagen",
+        "para": "UN objeto o figura que DICE lo que dice la frase (una escultura para «armar algo tuyo», un reloj para «horas», un cofre para un secreto). Se recorta y queda con su sombra. Cuesta: úsala solo cuando hay algo concreto que mostrar.",
+        "imagen": {
+          "tipo": "objeto"
+        }
+      },
+      {
+        "id": "clip",
+        "para": "tu propio video, más pequeño, en un recuadro de esquinas redondas con sombra: cuando la frase habla de un video, de ti, de alguien hablando, o no hay un objeto claro"
+      },
+      {
+        "id": "grafico",
+        "para": "una tarjeta animada, cuando lo que dices la pide: escoge la que MUESTRA esa frase",
         "graficos": [
-          { "id": "contador", "para": "dices una cifra (seguidores, vistas, ventas, días): el número sube hasta ella", "campos": [ { "k": "hasta", "num": true }, { "k": "unidad", "max": 18 } ] },
-          { "id": "barras", "para": "comparas 2 a 4 cantidades que TÚ dices (porcentajes, antes y después): barras que crecen", "campos": [ { "k": "barras", "lista": true, "max": 4, "d": "cada una { k: nombre corto (máx. 22), v: número }" }, { "k": "sufijo", "max": 4, "d": "« %», « k»… (opcional)" } ] },
-          { "id": "comentario", "para": "pides que te comenten: la caja de comentarios se escribe sola y se publica", "campos": [ { "k": "texto", "max": 34, "d": "lo que alguien comentaría (la respuesta a tu pregunta)" } ] },
-          { "id": "seguir", "para": "pides que te sigan: tu perfil y el botón «Seguir» que se toca", "campos": [] }
-        ] }
+          {
+            "id": "contador",
+            "nombre": "Contador",
+            "para": "dices una cifra con su unidad (seguidores, vistas, ventas, días): el número sube hasta ella",
+            "ejemplo": {
+              "hasta": 1000,
+              "unidad": "seguidores"
+            },
+            "campos": [
+              {
+                "k": "hasta",
+                "num": true,
+                "req": true,
+                "etq": "Cifra"
+              },
+              {
+                "k": "unidad",
+                "max": 18,
+                "etq": "Unidad"
+              }
+            ]
+          },
+          {
+            "id": "barras",
+            "nombre": "Barras",
+            "para": "comparas 2 a 4 cantidades que TÚ dices: barras que crecen",
+            "ejemplo": {
+              "barras": [
+                {
+                  "k": "Antes",
+                  "v": 20
+                },
+                {
+                  "k": "Ahora",
+                  "v": 65
+                }
+              ],
+              "sufijo": " %"
+            },
+            "campos": [
+              {
+                "k": "barras",
+                "lista": true,
+                "max": 4,
+                "d": "cada una { k: nombre corto (máx. 22), v: número }",
+                "etq": "Barras",
+                "ayuda": "Nombre: 62"
+              },
+              {
+                "k": "sufijo",
+                "max": 4,
+                "d": "« %», « k»… (opcional)",
+                "etq": "Sufijo"
+              }
+            ]
+          },
+          {
+            "id": "porcentaje",
+            "nombre": "Porcentaje",
+            "para": "dices un porcentaje («el 80 % no llega al final»): un anillo se llena",
+            "ejemplo": {
+              "hasta": 50
+            },
+            "campos": [
+              {
+                "k": "hasta",
+                "num": true,
+                "req": true,
+                "d": "de 0 a 100",
+                "etq": "Porcentaje"
+              }
+            ]
+          },
+          {
+            "id": "linea",
+            "nombre": "Línea que sube",
+            "para": "cuentas un crecimiento con su punto final («pasé de 500 mil a 5 millones»): una línea sube",
+            "ejemplo": {
+              "ini": "Antes",
+              "fin": "Ahora"
+            },
+            "campos": [
+              {
+                "k": "ini",
+                "max": 14,
+                "d": "de dónde partió, como lo dijo (opcional)",
+                "etq": "Desde"
+              },
+              {
+                "k": "fin",
+                "max": 14,
+                "req": true,
+                "d": "a dónde llegó, como lo dijo",
+                "etq": "Hasta"
+              }
+            ]
+          },
+          {
+            "id": "antes_despues",
+            "nombre": "Antes y después",
+            "para": "comparas dos cifras del antes y el ahora que TÚ dices («antes 14 horas, hoy solo 4»): dos columnas",
+            "ejemplo": {
+              "antes": 10,
+              "ahora": 20
+            },
+            "campos": [
+              {
+                "k": "antes",
+                "num": true,
+                "req": true,
+                "etq": "Antes"
+              },
+              {
+                "k": "ahora",
+                "num": true,
+                "req": true,
+                "etq": "Ahora"
+              },
+              {
+                "k": "sufijo",
+                "max": 4,
+                "d": "« h», « %»… (opcional)",
+                "etq": "Sufijo"
+              }
+            ]
+          },
+          {
+            "id": "multiplicador",
+            "nombre": "Multiplicador",
+            "para": "dices cuántas veces más («vendí 10 veces más», «el triple»): un ×N que sube",
+            "ejemplo": {
+              "veces": 3
+            },
+            "campos": [
+              {
+                "k": "veces",
+                "num": true,
+                "req": true,
+                "etq": "Veces"
+              }
+            ]
+          },
+          {
+            "id": "reloj",
+            "nombre": "Reloj",
+            "para": "dices una hora del día («me levanto a las 6 de la mañana»): las manecillas giran hasta esa hora",
+            "ejemplo": {
+              "hora": "6:00 a. m."
+            },
+            "campos": [
+              {
+                "k": "hora",
+                "max": 12,
+                "req": true,
+                "d": "así: «6:00 a. m.»",
+                "etq": "Hora"
+              }
+            ]
+          },
+          {
+            "id": "temporizador",
+            "nombre": "Temporizador",
+            "para": "dices un plazo corto en segundos o minutos («en 30 segundos», «5 minutos»): una cuenta regresiva",
+            "ejemplo": {
+              "segundos": 30
+            },
+            "campos": [
+              {
+                "k": "segundos",
+                "num": true,
+                "req": true,
+                "d": "el plazo en segundos, máximo 3600",
+                "etq": "Segundos"
+              }
+            ]
+          },
+          {
+            "id": "calendario",
+            "nombre": "Calendario",
+            "para": "dices un plazo en días o semanas («en 30 días», «3 semanas»): los días se van marcando",
+            "ejemplo": {
+              "dias": 30
+            },
+            "campos": [
+              {
+                "k": "dias",
+                "num": true,
+                "req": true,
+                "d": "de 1 a 35 (3 semanas = 21)",
+                "etq": "Días"
+              }
+            ]
+          },
+          {
+            "id": "seguir",
+            "nombre": "Seguir",
+            "para": "pides que te sigan: tu perfil y el botón «Seguir» que se toca",
+            "campos": []
+          },
+          {
+            "id": "comentario",
+            "nombre": "Comentario",
+            "para": "pides que te comenten: la caja de comentarios se escribe sola y se publica",
+            "ejemplo": {
+              "texto": "me encantó"
+            },
+            "campos": [
+              {
+                "k": "texto",
+                "max": 34,
+                "d": "lo que alguien comentaría (la respuesta a tu pregunta)",
+                "etq": "Comentario"
+              }
+            ]
+          },
+          {
+            "id": "me_gusta",
+            "nombre": "Me gusta",
+            "para": "pides un me gusta: dos toques y el corazón",
+            "campos": []
+          },
+          {
+            "id": "notificaciones",
+            "nombre": "Notificaciones",
+            "para": "cuentas que algo empezó a llegar (mensajes, seguidores, ventas): avisos que caen uno tras otro",
+            "ejemplo": {
+              "avisos": [
+                "Nuevo seguidor · Empezó a seguirte",
+                "Nuevo mensaje · Hola, vi tu video"
+              ]
+            },
+            "campos": [
+              {
+                "k": "avisos",
+                "lista": true,
+                "max": 3,
+                "maxc": 44,
+                "req": true,
+                "d": "2 o 3, cada uno «Título · detalle», sin cifras inventadas",
+                "etq": "Avisos",
+                "ayuda": "Nuevo seguidor · Empezó a seguirte"
+              }
+            ]
+          },
+          {
+            "id": "chat",
+            "nombre": "Chat",
+            "para": "cuentas lo que alguien te escribió («me escribió un cliente y me dijo…»): la conversación aparece",
+            "ejemplo": {
+              "nombre": "Cliente",
+              "mensajes": [
+                "Hola, vi tu video",
+                "yo: Te cuento ya mismo"
+              ]
+            },
+            "campos": [
+              {
+                "k": "nombre",
+                "max": 16,
+                "d": "quién escribe: «Cliente», «Mi mamá»",
+                "etq": "Quién escribe"
+              },
+              {
+                "k": "mensajes",
+                "lista": true,
+                "max": 3,
+                "maxc": 40,
+                "req": true,
+                "d": "1 a 3 con lo que dices que dijeron; los tuyos empiezan con «yo:»",
+                "etq": "Mensajes",
+                "ayuda": "yo: los tuyos empiezan así"
+              }
+            ]
+          },
+          {
+            "id": "guardar",
+            "nombre": "Guardar y compartir",
+            "para": "pides que guarden o compartan el video: el botón se toca",
+            "ejemplo": {
+              "accion": "guardar"
+            },
+            "campos": [
+              {
+                "k": "accion",
+                "max": 10,
+                "d": "«guardar» o «compartir»",
+                "etq": "Guardar o compartir"
+              }
+            ]
+          },
+          {
+            "id": "buscador",
+            "nombre": "Buscador",
+            "para": "mencionas buscar algo en internet: la búsqueda se escribe sola",
+            "ejemplo": {
+              "texto": "cómo empezar"
+            },
+            "campos": [
+              {
+                "k": "texto",
+                "max": 30,
+                "req": true,
+                "d": "lo que se busca",
+                "etq": "Búsqueda"
+              }
+            ]
+          },
+          {
+            "id": "flecha",
+            "nombre": "Flecha",
+            "para": "explicas que una cosa lleva a otra («sin atención no hay ventas»): una flecha va de una a la otra",
+            "ejemplo": {
+              "de": "Esto",
+              "a": "Aquello"
+            },
+            "campos": [
+              {
+                "k": "de",
+                "max": 12,
+                "req": true,
+                "d": "una o dos palabras",
+                "etq": "De"
+              },
+              {
+                "k": "a",
+                "max": 12,
+                "req": true,
+                "d": "una o dos palabras",
+                "etq": "A"
+              }
+            ]
+          },
+          {
+            "id": "chequeos",
+            "nombre": "Chequeos",
+            "para": "dices «solo necesitas 3 cosas» y las nombras JUNTAS en esta frase: se marcan una a una (si las explicas una por una, mejor una lámina para cada una)",
+            "ejemplo": {
+              "puntos": [
+                "Primero",
+                "Segundo",
+                "Tercero"
+              ]
+            },
+            "campos": [
+              {
+                "k": "puntos",
+                "lista": true,
+                "max": 3,
+                "maxc": 22,
+                "req": true,
+                "d": "2 o 3, muy cortos",
+                "etq": "Puntos"
+              }
+            ]
+          },
+          {
+            "id": "sello",
+            "nombre": "Sello",
+            "para": "desmientes o afirmas algo con fuerza («eso es mentira», «es gratis», «prohibido»): un sello cae encima",
+            "ejemplo": {
+              "sello": "MENTIRA"
+            },
+            "campos": [
+              {
+                "k": "frase",
+                "max": 34,
+                "d": "lo que se desmiente; se tacha (opcional)",
+                "etq": "Frase"
+              },
+              {
+                "k": "sello",
+                "max": 11,
+                "req": true,
+                "d": "una palabra: MENTIRA, VERDAD, GRATIS, PROHIBIDO",
+                "etq": "Sello"
+              }
+            ]
+          },
+          {
+            "id": "precio",
+            "nombre": "Precio",
+            "para": "hablas de un precio o de una rebaja que TÚ dices: el de antes se tacha y entra el nuevo",
+            "ejemplo": {
+              "antes": "$100.000",
+              "ahora": "$50.000"
+            },
+            "campos": [
+              {
+                "k": "antes",
+                "max": 12,
+                "d": "el precio de antes, si lo dices",
+                "etq": "Antes"
+              },
+              {
+                "k": "ahora",
+                "max": 12,
+                "req": true,
+                "d": "el precio, escrito: «$100.000»",
+                "etq": "Ahora"
+              }
+            ]
+          }
+        ]
+      }
     ]
   },
   "imagenes": {
-    "objeto": { "nombre": "Objeto", "piezas": 1, "d": "un objeto o figura sola; Cherry la genera en el estilo que la persona escoge para ESE video, sobre verde, y la recorta" },
+    "objeto": {
+      "nombre": "Objeto",
+      "piezas": 1,
+      "d": "un objeto o figura sola; Cherry la genera en el estilo que la persona escoge para ESE video, sobre verde, y la recorta"
+    },
     "estilo_defecto": "editorial",
     "d_estilos": "El estilo se escoge en CADA video (viene marcado el último que usó la persona). El texto de la imagen = lo que «ve» el director + el texto del estilo + «fondo_verde». «referencia»: la persona sube 1 a 3 imágenes y van como guía de estilo con «texto_referencia». «sin imágenes»: va su video en el recuadro, gratis.",
     "estilos": [
-      {"id": "editorial", "muestra": "estilos/camara-viva/muestras/editorial.webp", "nombre": "Editorial", "d": "Foto de estudio en blanco y negro: plata, mármol, piedra.", "texto": "as a black-and-white fine-art editorial photograph: fully monochrome grayscale object, photorealistic, premium studio lighting with a soft key light from the upper left, rich deep blacks and silvery highlights, refined materials (polished silver, marble, stone), high-end luxury magazine look, elegant and minimal, crisp detail."},
-      {"id": "color_suave", "muestra": "estilos/camara-viva/muestras/color_suave.webp", "nombre": "Color suave", "d": "Foto de estudio con colores apagados: verde salvia, arena, rosa viejo.", "texto": "as a photorealistic editorial still-life photograph: soft muted color palette (sage green-gray, sand, dusty rose, warm beige), soft diffused premium studio lighting, matte refined materials, minimal and elegant, high-end design magazine look."},
-      {"id": "yeso", "muestra": "estilos/camara-viva/muestras/yeso.webp", "nombre": "Yeso", "d": "Todo en yeso blanco, como escultura de galería.", "texto": "sculpted entirely in matte white plaster like a classical gallery sculpture: photorealistic, all white, soft studio lighting with gentle shading that reveals the form, elegant and minimal, museum quality."},
-      {"id": "3d_suave", "muestra": "estilos/camara-viva/muestras/3d_suave.webp", "nombre": "3D suave", "d": "Formas redondas tipo plastilina, colores pastel.", "texto": "as a soft 3D render: smooth rounded forms, matte clay-like materials, soft pastel colors, gentle global illumination, clean and minimal, premium modern product illustration like a high-end tech brand."},
-      {"id": "pintado", "muestra": "estilos/camara-viva/muestras/pintado.webp", "nombre": "Pintado", "d": "Pintado tipo animación, colores vivos.", "texto": "in Arcane (Fortiche) painterly animation style, as realistic as possible, clean and polished, pop-art comic magazine vibe, warm vivid colors, brighter and cleaner, not dark, not gloomy, no grime."}
+      {
+        "id": "editorial",
+        "muestra": "estilos/camara-viva/muestras/editorial.webp",
+        "nombre": "Editorial",
+        "d": "Foto de estudio en blanco y negro: plata, mármol, piedra.",
+        "texto": "as a black-and-white fine-art editorial photograph: fully monochrome grayscale object, photorealistic, premium studio lighting with a soft key light from the upper left, rich deep blacks and silvery highlights, refined materials (polished silver, marble, stone), high-end luxury magazine look, elegant and minimal, crisp detail."
+      },
+      {
+        "id": "color_suave",
+        "muestra": "estilos/camara-viva/muestras/color_suave.webp",
+        "nombre": "Color suave",
+        "d": "Foto de estudio con colores apagados: verde salvia, arena, rosa viejo.",
+        "texto": "as a photorealistic editorial still-life photograph: soft muted color palette (sage green-gray, sand, dusty rose, warm beige), soft diffused premium studio lighting, matte refined materials, minimal and elegant, high-end design magazine look."
+      },
+      {
+        "id": "yeso",
+        "muestra": "estilos/camara-viva/muestras/yeso.webp",
+        "nombre": "Yeso",
+        "d": "Todo en yeso blanco, como escultura de galería.",
+        "texto": "sculpted entirely in matte white plaster like a classical gallery sculpture: photorealistic, all white, soft studio lighting with gentle shading that reveals the form, elegant and minimal, museum quality."
+      },
+      {
+        "id": "3d_suave",
+        "muestra": "estilos/camara-viva/muestras/3d_suave.webp",
+        "nombre": "3D suave",
+        "d": "Formas redondas tipo plastilina, colores pastel.",
+        "texto": "as a soft 3D render: smooth rounded forms, matte clay-like materials, soft pastel colors, gentle global illumination, clean and minimal, premium modern product illustration like a high-end tech brand."
+      },
+      {
+        "id": "pintado",
+        "muestra": "estilos/camara-viva/muestras/pintado.webp",
+        "nombre": "Pintado",
+        "d": "Pintado tipo animación, colores vivos.",
+        "texto": "in Arcane (Fortiche) painterly animation style, as realistic as possible, clean and polished, pop-art comic magazine vibe, warm vivid colors, brighter and cleaner, not dark, not gloomy, no grime."
+      }
     ],
     "texto_referencia": "in exactly the same art style, materials, lighting and color palette as the attached reference images (use them ONLY as a style reference, do not copy their subject or composition).",
     "fondo_verde": "The object stands alone, whole and centered with some margin, on a flat solid pure chroma-key green background (#00FF00), evenly lit, no shadow on the background, no green on the object. No text, no letters, no numbers, no logos."

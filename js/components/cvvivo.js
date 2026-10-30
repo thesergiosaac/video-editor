@@ -13,7 +13,7 @@
   const C = window.CARRETE, MOV = window.CherryMov, CV = window.CherryCV;
   if (!C || !MOV || !CV) return;
   const CV_PARA_TODOS = false;
-  const VISTA_JS = 'js/vista-cv.js?v=20261030titulos', CARAS_JS = 'js/caras.js?v=20261029cv1';
+  const VISTA_JS = 'js/vista-cv.js?v=20261030g20', CARAS_JS = 'js/caras.js?v=20261029cv1';
   const CADA_MS = 6000;     // cada cuánto se pregunta por el plan mientras el director trabaja (≈ 90 s)
   const TARDA_S = 95;       // lo que tarda el director (medido: 89 a 97 s): la cuenta de la etiqueta del celular
   const CARAS_X = 1.3;      // buscar la cara tarda ≈ 1,3 s por segundo de video (2 min → 149 s en un computador sin tarjeta)
@@ -112,18 +112,34 @@
     } catch (_) { E.foto = ''; }   // video sin permiso de lectura: el gráfico va sin foto
     return E.foto;
   }
+  /* La cuenta conectada, para el gráfico de seguir (sin cuenta no se muestra ningún número: nunca cifras de ejemplo) */
+  function cuentaIG() {
+    try {
+      const q = window.CherryCuenta && window.CherryCuenta.instagram && window.CherryCuenta.instagram(), p = q && q.perfil;
+      return p && p.usuario ? { usuario: String(p.usuario).replace(/^@/, ''), seguidores: p.seguidores, seguidos: p.seguidos, publicaciones: p.publicaciones } : null;
+    } catch (_) { return null; }
+  }
+  /* (30-oct) EL COLOR DE ACENTO. Sergio: «debe ser configurable: si una persona cambia los subtítulos de color, no siempre los gráficos
+     pueden ir rojos». El que escogió; si no, el de la plantilla de sus títulos o el de sus subtítulos; si ninguno tiene color, rubí */
+  const conColor = (c) => { if (!/^#[0-9a-fA-F]{6}$/.test(String(c || ''))) return null; const n = parseInt(c.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255; return Math.max(r, g, b) - Math.min(r, g, b) < 24 ? null : c.toLowerCase(); };
+  function acentoAuto() {
+    const est = C.state.cvTituloEstilo && C.subs && C.subs.estiloTitulo ? C.subs.estiloTitulo(C.state.cvTituloEstilo, C.state) : null;
+    return conColor(est && est.acento) || (C.subs && C.subs.acentoDe ? conColor(C.subs.acentoDe(C.state)) : null);
+  }
+  const acentoDe = () => conColor(C.state.cvAcento) || acentoAuto();
   /* Lo que va en cada lámina: su imagen (armar la deja en objeto.img) o, si no hay, tu video en el recuadro */
   function material(m) {
     const o = m.objeto || {};
     if (o.tipo === 'imagen') return o.img ? { objeto: o.img } : {};
-    if (o.tipo === 'grafico') return E.foto ? { foto: E.foto } : {};
+    if (o.tipo === 'grafico') { const c = cuentaIG(); return Object.assign({}, E.foto ? { foto: E.foto } : {}, c ? { cuenta: c } : {}); }
     return {};
   }
   /* El plan en segundos del video que se ve (el reloj real de la base: cada corte se recorta un poco) */
   function armar(ctx) {
     const sinImg = estiloImg() === 'sin';
     const est = C.state.cvTituloEstilo && C.subs && C.subs.estiloTitulo ? C.subs.estiloTitulo(C.state.cvTituloEstilo, C.state) : null;
-    const clave = E.id + '|' + (E.caras ? E.caras.length : 0) + '|' + (C.state.grafFondoCV || '') + '|' + (E.foto ? 1 : 0) + '|' + (ctx.duraciones || []).join(',') +
+    const acento = acentoDe(), cta = cuentaIG();
+    const clave = E.id + '|' + (E.caras ? E.caras.length : 0) + '|' + (C.state.grafFondoCV || '') + '|' + (acento || '') + '|' + (cta ? cta.usuario : '') + '|' + (E.foto ? 1 : 0) + '|' + (ctx.duraciones || []).join(',') +
       '|' + (sinImg ? 'sin' : Object.keys(E.imagenes).map((k) => k + ':' + E.imagenes[k].key).join(',')) + '|' + JSON.stringify(est);
     if (clave === E.clave && E.piezas) return;
     E.clave = clave;
@@ -131,7 +147,7 @@
     // las MISMAS palabras que recibió el director (él descarta las vacías y numera sin ellas)
     const pal = (ctx.palabras || []).filter((p) => p && String(p.word || '').trim())
       .map((p) => ({ word: p.word, start: aR(Number(p.start)), end: aR(Number(p.end)) }));
-    const plan = Object.assign({}, E.plan, { fondo: C.state.grafFondoCV || null, estiloTexto: est,
+    const plan = Object.assign({}, E.plan, { fondo: C.state.grafFondoCV || null, estiloTexto: est, acento,
       momentos: (E.plan.momentos || []).map((m, i) => {
         const im = !sinImg && m.tipo === 'lamina' && m.objeto && m.objeto.tipo !== 'grafico' ? E.imagenes[i] : null;
         return Object.assign({}, m, { t0: aR(Number(m.t0)), t1: aR(Number(m.t1)) }, im ? { objeto: Object.assign({}, m.objeto, { tipo: 'imagen', img: im.url }) } : {});
@@ -246,7 +262,7 @@
   function pedirFicha() {
     if (E.ficha || E.pidiendoFicha) return;
     E.pidiendoFicha = true;
-    fetch('estilos/camara-viva/ficha.json?v=20261030img').then((r) => r.json()).then((f) => { E.ficha = f; C.render(); })
+    fetch('estilos/camara-viva/ficha.json?v=20261030g20').then((r) => r.json()).then((f) => { E.ficha = f; C.render(); })
       .catch((e) => console.warn('[Cámara viva] ficha', e)).finally(() => { E.pidiendoFicha = false; });
   }
   function estiloImg() {
@@ -258,13 +274,13 @@
   /* (30-oct) CTRL + Z. Sergio: «como normalmente funcionaría un programa de edición». Cada cambio le avisa al historial del Manual
      (C.cvVivo.alCambiar) con lo que había antes: una imagen de una lámina o los ajustes. Deshacer vuelve a poner eso y el
      archivo sigue ahí: nunca se borra, así que deshacer no cuesta créditos. */
-  const AJUSTES = ['grafOn', 'grafEstilo', 'grafFondoCV', 'cvEstiloImg', 'cvTituloEstilo'];
+  const AJUSTES = ['grafOn', 'grafEstilo', 'grafFondoCV', 'cvEstiloImg', 'cvTituloEstilo', 'cvAcento'];
   const fotoAjustes = () => { const o = {}; AJUSTES.forEach((k) => { o[k] = C.state[k]; }); return o; };
   const fotoImagen = (i) => { const im = E.imagenes[i]; return im ? { key: im.key, estilo: im.estilo, origen: im.origen, desc: im.desc } : null; };
   const anotar = (cambio) => { if (C.cvVivo.alCambiar) C.cvVivo.alCambiar(Object.assign({ fila: E.id }, cambio)); };
   function cambiarAjustes(patch) { anotar({ ajustes: fotoAjustes() }); E.clave = ''; E.avisoImg = ''; C.setState(patch); }
   /* (30-oct) CORREGIR UN MOMENTO (texto, palabra roja, cámara o quitarlo). Lo escribe el servidor; aquí se pinta al volver */
-  const fotoMomento = (i) => { const m = E.plan.momentos[i]; return { tipo: m.tipo, camara: m.camara, camaraFija: !!m.camaraFija, titulo: m.titulo ? Object.assign({}, m.titulo) : null, texto: m.texto ? Object.assign({}, m.texto) : undefined }; };
+  const fotoMomento = (i) => { const m = E.plan.momentos[i]; return { tipo: m.tipo, camara: m.camara, camaraFija: !!m.camaraFija, titulo: m.titulo ? Object.assign({}, m.titulo) : null, texto: m.texto ? Object.assign({}, m.texto) : undefined, objeto: m.objeto ? JSON.parse(JSON.stringify(m.objeto)) : undefined }; };
   async function escribirMomento(i, cambios) {
     const id = E.id;
     const r = await C.api.edgeFetch('camara-viva', { accion: 'editar_momento', render_id: id, momento: i, cambios }, true, 30000);
@@ -479,8 +495,26 @@
       h('div', { class: 'cvi-estilos', role: 'group', 'aria-label': 'Estilo de los títulos' },
         chip('', 'Cámara viva', h('span', { class: 'cvi-letra-aa', style: { fontFamily: "'Outfit',sans-serif", fontWeight: 800, color: '#E0475A' } }, 'Aa')), opciones));
   }
+  /* (30-oct) El color de acento de los gráficos y las palabras clave: por defecto sigue a los subtítulos */
+  const ACENTOS = [['#9b111e', 'Rubí'], ['#ff2d8a', 'Rosa'], ['#f26b21', 'Naranja'], ['#e0a100', 'Dorado'], ['#12a150', 'Verde'], ['#1c6fe8', 'Azul'], ['#7a3ff2', 'Morado']];
+  function panelAcento() {
+    const h = C.h, act = conColor(C.state.cvAcento) || '', auto = acentoAuto() || '#9b111e', propio = !!act && !ACENTOS.some((a) => a[0] === act);
+    const punto = (c) => h('i', { class: 'cvi-punto', style: { background: c } });
+    const chip = (id, nombre, c) => h('button', { type: 'button', class: 'cvi-estilo cvi-letra', 'aria-pressed': String(act === id), title: nombre,
+      onClick: () => cambiarAjustes({ cvAcento: id || null }) }, punto(c), h('span', null, nombre));
+    return h('div', { class: 'cvi' }, h('div', { class: 'cvi-cab' }, h('b', null, 'Color de acento')),
+      h('div', { class: 'cvi-estilos', role: 'group', 'aria-label': 'Color de acento' },
+        chip('', 'Como tus subtítulos', auto), ACENTOS.map((a) => chip(a[0], a[1], a[0])),
+        h('label', { class: 'cvi-estilo cvi-letra', 'aria-pressed': String(propio), title: 'Escoge cualquier color' }, h('input', { type: 'color', class: 'cvi-otro', value: propio ? act : auto, onChange: (ev) => cambiarAjustes({ cvAcento: String(ev.target.value).toLowerCase() }) }), h('span', null, 'Otro'))));
+  }
+  /* (30-oct) Los gráficos de la ficha, para escoger uno en la lámina */
+  const graficosFicha = () => {
+    pedirFicha();
+    const o = ((E.ficha && E.ficha.lamina && E.ficha.lamina.objetos) || []).find((x) => x.id === 'grafico');
+    return (o && o.graficos) || [];
+  };
   /* Para saber si hay que volver a pintar el panel */
-  const firmaImagenes = () => JSON.stringify([C.state.cvTituloEstilo, estiloImg(), !!E.ficha, !!E.verTodas, E.avisoImg, E.refs.length, Object.keys(E.trabajos), E.avisosImg,
+  const firmaImagenes = () => JSON.stringify([C.state.cvTituloEstilo, C.state.cvAcento, acentoAuto(), estiloImg(), !!E.ficha, !!E.verTodas, E.avisoImg, E.refs.length, Object.keys(E.trabajos), E.avisosImg,
     laminasImg().map((l) => (l.img ? l.img.key + l.img.estilo : ''))]);
 
   const ICONOS = { video: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M10 9.5v5l4-2.5z"/>', subir: '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>' };
@@ -531,11 +565,11 @@
   function enLinea() {
     return ((E.plan && E.plan.momentos) || []).map((m, i) => {
       const lam = m.tipo === 'lamina', tx = (lam ? m.texto : m.titulo) || {};
-      const o = m.objeto || {}, im = lam && o.tipo !== 'grafico' && estiloImg() !== 'sin' ? E.imagenes[i] : null;
+      const o = (lam && m.objeto) || {}, im = lam && o.tipo !== 'grafico' && estiloImg() !== 'sin' ? E.imagenes[i] : null;
       return { i, lamina: lam, t0: Number(m.t0), t1: Number(m.t1), desde: m.desde, hasta: m.hasta, tx, quitada: !!(m.orig && m.orig.tipo === 'lamina' && !lam),
         camara: (E.prep && E.prep.camaras && E.prep.camaras[i]) || m.camara || 'suave',
         nombre: tx.gruesa || tx.chica || (lam ? 'Lámina' : 'Tú hablando'), texto: [tx.etiqueta, tx.chica, tx.gruesa, tx.remate].filter(Boolean).join(' · '),
-        objeto: !lam ? null : o.tipo === 'grafico' ? 'grafico' : im ? 'imagen' : 'video', grafico: o.grafico || null, img: im ? im.url : null, pide: o.es || null };
+        objeto: !lam ? null : o.tipo === 'grafico' ? 'grafico' : im ? 'imagen' : 'video', grafico: o.grafico || null, obj: o, img: im ? im.url : null, pide: o.es || null };
     }).filter(Boolean);
   }
 
@@ -548,5 +582,5 @@
     return { texto: lam.length + ' láminas y ' + (ms.length - lam.length) + ' momentos en que hablas tú.', plan: E.plan };
   }
 
-  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, enLinea, editarMomento, verPlan: () => E.ver || 0, panelImagenes, panelEstiloTitulos, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
+  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, enLinea, editarMomento, verPlan: () => E.ver || 0, panelImagenes, panelEstiloTitulos, panelAcento, graficosFicha, dejarVideo, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
 })();

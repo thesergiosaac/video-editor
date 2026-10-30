@@ -149,7 +149,7 @@
   function preparar(plan, caras) {
     var momentos = (plan && plan.momentos) || [];
     var p = planos(momentos, caras), tr = tramos(p.kf);
-    p.titulos.forEach(function (ti) { ti.caja = cajaTitulo(caras, tr, ti); ti.estilo = (plan && plan.estiloTexto) || null; });
+    p.titulos.forEach(function (ti) { ti.caja = cajaTitulo(caras, tr, ti); ti.estilo = (plan && plan.estiloTexto) || null; ti.acento = (plan && plan.acento) || null; });
     return { kf: p.kf, tramos: tr, titulos: p.titulos, camaras: p.camaras };
   }
 
@@ -163,9 +163,15 @@
     return siNo;
   }
   var nPal = function (x) { return String(x || '').split(' ').filter(Boolean).length; };
+  /* (30-oct) LÁMINA Y LÁMINA. Sergio: «no siempre debe ser video lámina video lámina… la cámara hace el movimiento a la derecha y descubre
+     otra imagen o un gráfico; parece una sola lámina y el resto de la información está fuera de pantalla» (referencia de kayn.marketing).
+     Dos láminas pegadas (menos de 0,6 s entre ellas) comparten el fondo y la cámara viaja de una a la otra. Hacia la derecha casi siempre
+     y de vez en cuando hacia abajo, como la referencia. Si las dos llevan tu video no se puede (es uno solo): ahí la segunda entra como siempre. */
+  var RUMBOS = ['der', 'der', 'abajo'], PEGADA = 0.6;
+  var conHueco = function (o, mat) { return !o || o.tipo === 'clip' || (o.tipo === 'imagen' && !(mat && mat.objeto)); };
   function piezas(plan, palabras, material) {
-    var out = [], fondo = (plan && plan.fondo) || null;
-    ((plan && plan.momentos) || []).forEach(function (m, i) {
+    var out = [], fondo = (plan && plan.fondo) || null, nRumbo = 0, ms = (plan && plan.momentos) || [];
+    ms.forEach(function (m, i) {
       if (m.tipo !== 'lamina') return;
       var tx = m.texto || {}, a = m.t0;
       var tC = tiempoDe(tx.chica, m, palabras, a + 0.05);
@@ -173,8 +179,20 @@
       tG = Math.min(tG, Math.max(a + 0.05, m.t1 - 0.7));          // la gruesa nunca entra cuando ya se va la lámina
       var z = (m.zoom || [])[0], pz = palabras && z != null && palabras[z] ? (palabras[z].start != null ? palabras[z].start : palabras[z].s) - 0.06 : null;
       var mm = { plantilla: 'lamina', t0: m.t0, t1: m.t1, fondo: m.fondo || fondo, texto: tx, objeto: m.objeto || { tipo: 'clip' },
-                 zoomT: pz, semilla: i, orden: out.length, tiempos: { chica: tC, gruesa: tG }, estiloTexto: (plan && plan.estiloTexto) || null };
-      out.push({ m: mm, mat: material ? material(mm, out.length) : {} });
+                 zoomT: pz, semilla: i, orden: out.length, tiempos: { chica: tC, gruesa: tG }, estiloTexto: (plan && plan.estiloTexto) || null, acento: (plan && plan.acento) || null };
+      var mat = material ? material(mm, out.length) : {}, ant = out[out.length - 1];
+      if (ant && ms[i - 1] && ms[i - 1].tipo === 'lamina' && mm.t0 - ant.m.t1 < PEGADA) {
+        ant.m.t1 = mm.t0;                                         // sin hueco: nunca se asoma tu video entre las dos
+        mm.t00 = ant.m.t00 != null ? ant.m.t00 : ant.m.t0;
+        mm.ladoG = ant.m.ladoG != null ? ant.m.ladoG : ant.m.semilla;
+        mm.nPasos = ant.m.nPasos || 0;
+        if (!(conHueco(ant.m.objeto, ant.mat) && conHueco(mm.objeto, mat))) {
+          ant.m.sigue = true;
+          mm.nPasos++;
+          mm.paso = { dir: RUMBOS[nRumbo++ % RUMBOS.length], ant: { m: Object.assign({}, ant.m, { paso: null }), mat: ant.mat } };
+        }
+      }
+      out.push({ m: mm, mat: mat });
     });
     return out;
   }

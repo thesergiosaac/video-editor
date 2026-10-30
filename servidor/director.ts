@@ -28,9 +28,9 @@ const PRECIO: Record<string, [number, number]> = {   // US$ por millón de token
    + títulos con sombras y animaciones de entrada y salida + movimientos de cámara. Esa es la esencia, no más» ── */
 const REGLAS_CAMARA_VIVA = `
 REGLAS DEL ESTILO (salen del reel de referencia y de correcciones reales del creador; cúmplelas todas):
-1. Se ALTERNAN tú hablando y láminas. Un tramo «hablando» con título es CORTO: 1,5 a 4 s, UNA frase, su título y corte. Un tramo hablando puede ir SIN título (cámara «suave») solo si la frase es de paso y corta. NINGÚN momento dura más de 4,5 s: si la idea sigue, pártela en otro momento (otra cámara, otro título o una lámina). Pueden ir hasta 2 láminas seguidas; si pasan más de ~7 s sin verse a la persona, se vuelve a ella. Cubre TODAS las palabras, de la primera a la última, sin huecos.
+1. Un tramo «hablando» con título es CORTO: 1,5 a 4 s, UNA frase, su título y corte. Un tramo hablando puede ir SIN título (cámara «suave») solo si la frase es de paso y corta. NINGÚN momento dura más de 4,5 s: si la idea sigue, pártela en otro momento (otra cámara, otro título o una lámina). NO alternes siempre persona, lámina, persona, lámina: cuando una idea sigue (un dato tras otro, una causa y su efecto, una lista), van 2 o 3 LÁMINAS SEGUIDAS, una detrás de la otra sin nada en medio: la cámara viaja de una a la siguiente como si fuera un solo lienzo. Haz esto en más o menos 1 de cada 3 láminas. De las láminas seguidas, máximo UNA puede llevar «clip»; las demás, imagen o gráfico. Si pasan más de ~7 s sin verse a la persona, se vuelve a ella. Cubre TODAS las palabras, de la primera a la última, sin huecos.
 2. Una LÁMINA es siempre lo mismo: el fondo de color, UN objeto y dos líneas de texto. Lo único que escoges es el objeto:
-   - «grafico» cuando lo que dice lo pide. CADA VEZ que dice una cifra con su unidad («200 mil seguidores», «un millón de vistas», «3 meses») va una lámina con contador (no la dejes solo como título). Varias cantidades que compara → barras (solo con números que ÉL dijo, nunca inventados). Pide comentar → comentario. Pide que lo sigan → seguir.
+   - «grafico» cuando lo que dice lo pide: CADA VEZ que dice una cifra, una hora, un plazo, un precio o un porcentaje va una lámina con su gráfico (no la dejes solo como título). Escoge el que MUESTRA esa frase, de la lista de arriba, y varía: no repitas el mismo si otro sirve. NUNCA INVENTES CIFRAS NI DATOS: todo número sale de lo que dijo; si para un gráfico te falta un dato que no dijo, usa otro objeto. Pide comentar → comentario. Pide que lo sigan → seguir. Pide guardar o compartir → guardar.
    - «imagen» cuando hay una cosa concreta que MUESTRA la frase (una escultura para «armar algo tuyo», un reloj para «horas», un cofre para un secreto). Cada imagen DICE lo que dice la frase: nada genérico ni decorativo. Cada imagen le cuesta a la persona: como máximo una cada ~10 s.
    - «clip» (su propio video en un recuadro) en lo demás: cuando habla de un video, de sí mismo, de alguien hablando, o no hay un objeto claro.
 3. ZOOM INMEDIATO cuando se nombra lo que se ve en la lámina: marca esa palabra en «zoom». Una sola vez por lámina.
@@ -165,6 +165,9 @@ function validar(plan: any, ficha: any, palabras: any[]): { momentos: any[], avi
           else avisos.push(`las barras de la palabra ${m.desde} no traían 2 números: va tu video`)
         } else obj = { tipo: 'grafico', grafico: g.id, ...limpiarTexto(o, g.campos || []) }
         if (obj.grafico === 'contador' && !(obj.hasta > 0)) { avisos.push(`el contador de la palabra ${m.desde} no traía cifra: va tu video`); obj = { tipo: 'clip' } }
+        // (30-oct) un gráfico sin el dato que necesita no sale: nunca se inventa
+        const falta = g && obj.tipo === 'grafico' ? (g.campos || []).find((c: any) => c.req && (obj[c.k] == null || obj[c.k] === '' || (Array.isArray(obj[c.k]) && !obj[c.k].length))) : null
+        if (falta) { avisos.push(`el gráfico ${obj.grafico} de la palabra ${m.desde} no traía ${falta.k}: va tu video`); obj = { tipo: 'clip' } }
       }
       m.objeto = obj
       delete m.plantilla; delete m.fondo; delete m.imagen; delete m.imagenes

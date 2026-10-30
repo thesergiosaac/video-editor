@@ -147,6 +147,7 @@
     grafFondoCV: null,            // (29-oct) Cámara viva: el color del fondo de las láminas (null = el crema de la ficha)
     cvEstiloImg: null,            // (29-oct) Cámara viva: el estilo de las imágenes de ESTE video (null = el último que usó)
     cvTituloEstilo: null,         // (30-oct) Cámara viva: la plantilla de la que toman letra y color sus títulos (null = la suya)
+    cvAcento: null,               // (30-oct) Cámara viva: el color de acento de sus gráficos y palabras clave (null = como los subtítulos)
     grafFondo: 'marca',
     grafVariantes: {},            // (29-sep) la pieza de la persiana escogida para cada gráfico de una palabra
     /* la pista «Zoom» del editor del resultado (todavía de muestra) los usa */
@@ -330,7 +331,7 @@
     const s = C.state;
     // (29-oct) la Cámara viva: su plan lo arma el director; aquí solo van el color de sus láminas y el estilo de sus imágenes
     if (s.grafEstilo === 'camara_viva') return s.grafOn ? { cantidad: 'medio', estilo: 'camara_viva', color: s.grafColor || 'cherry',
-      ...(s.grafFondoCV ? { fondo_cv: s.grafFondoCV } : {}), ...(s.cvEstiloImg ? { estilo_imagenes: s.cvEstiloImg } : {}), ...(s.cvTituloEstilo ? { estilo_titulos: s.cvTituloEstilo } : {}) } : {};
+      ...(s.grafFondoCV ? { fondo_cv: s.grafFondoCV } : {}), ...(s.cvEstiloImg ? { estilo_imagenes: s.cvEstiloImg } : {}), ...(s.cvTituloEstilo ? { estilo_titulos: s.cvTituloEstilo } : {}), ...(s.cvAcento ? { acento_cv: s.cvAcento } : {}) } : {};
     const familias = (Array.isArray(s.grafFamilias) ? s.grafFamilias : []).filter((f) => f === 'vidrio' || f === 'persiana');
     return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico', detras: !!s.grafDetras, fijos: C.fijosDe('graficos'),
       familias: familias.length ? familias : ['vidrio'], fondo: ['marca', 'blanco', 'papel', 'alterna'].indexOf(s.grafFondo) >= 0 ? s.grafFondo : 'marca',
@@ -644,6 +645,7 @@
     patch.grafFondoCV = gf && /^#[0-9a-fA-F]{6}$/.test(String(gf.fondo_cv || '')) ? gf.fondo_cv : null;   // (29-oct)
     patch.cvEstiloImg = gf && gf.estilo_imagenes ? String(gf.estilo_imagenes) : null;
     patch.cvTituloEstilo = gf && gf.estilo_titulos ? String(gf.estilo_titulos) : null;
+    patch.cvAcento = gf && /^#[0-9a-fA-F]{6}$/.test(String(gf.acento_cv || '')) ? gf.acento_cv : null;
     if (gf) patch.grafFamilias = Array.isArray(gf.familias) && gf.familias.length ? gf.familias : ['vidrio'];   // (29-sep)
     if (gf && gf.fondo) patch.grafFondo = gf.fondo;
     patch.grafVariantes = gf && gf.variantes && typeof gf.variantes === 'object' ? gf.variantes : {};

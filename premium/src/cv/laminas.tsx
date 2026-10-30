@@ -14,22 +14,34 @@
 // el suyo). Todo en el cuadro de 1080 × 1920; t = segundo del video.
 import React from 'react';
 import {AbsoluteFill, Img} from 'remotion';
-import {EstiloTexto, camLamina, Cam, Capa, FondoPlano, Rotulo, esOscuro, sombraDe, sombraCaja, Palabras, urb, R, clamp, lerp, outCubic, p} from './kit';
+import {EstiloTexto, camLamina, Cam, Capa, FondoPlano, Rotulo, esOscuro, sombraDe, sombraCaja, clamp, lerp} from './kit';
+import {GRAFICOS, TARJETA_TOP, PASO, desenfoqueEntrada} from './graficos';
 
-export type Objeto = {tipo: 'imagen' | 'clip' | 'grafico'; grafico?: 'contador' | 'barras' | 'comentario' | 'seguir'; hasta?: number; unidad?: string;
-  barras?: {k: string; v: number}[]; sufijo?: string; texto?: string; cuenta?: string; seguidores?: number; es?: string; ve?: string};
+export type Objeto = {tipo: 'imagen' | 'clip' | 'grafico'; grafico?: string; barras?: {k: string; v: number}[]; es?: string; ve?: string; [campo: string]: any};
 export type Momento = {plantilla: string; t0: number; t1: number; fondo?: string | null; texto: {chica?: string; gruesa?: string; rojas?: string[]};
   objeto: Objeto; zoomT?: number | null; tiempos: {chica: number; gruesa: number}; semilla?: number;
   orden?: number;     // (29-oct) el n.º de la lámina en el video: le toca la entrada ENTRADAS[orden % 5]
   estiloTexto?: EstiloTexto | null;   // (30-oct) la letra y los colores de una plantilla de subtítulos
+  acento?: string | null;   // (30-oct) el color de acento de los gráficos y las palabras clave (tema.ts); sin él, rubí
+  // (30-oct) Sergio: «a veces puede ser lámina y lámina… parece una sola lámina y el resto está fuera de pantalla». La lámina que
+  // sigue pegada a otra no entra: la cámara viaja hasta ella (camara-viva.js › piezas decide cuándo)
+  paso?: {dir: 'der' | 'izq' | 'abajo'; ant: {m: Momento; mat: Material}} | null;
+  sigue?: boolean;    // la cámara se va de aquí a la siguiente: el texto no se apaga, se queda en su sitio
+  t00?: number;       // cuándo empezó este tramo de láminas pegadas (el fondo es uno solo)
+  nPasos?: number; ladoG?: number;
   clip?: boolean};    // va tu video en el recuadro (lo pone la plantilla con usaClip): movimientos más suaves, sin zoom
-export type Material = {objeto?: string; foto?: string; ejemplo?: boolean};
+export type Material = {objeto?: string; foto?: string; ejemplo?: boolean; cuenta?: {usuario?: string; seguidores?: number; seguidos?: number; publicaciones?: number}};
 type P = {t: number; m: Momento; mat: Material};
 export type Rect = {left: number; top: number; width: number; height: number; radio: number; rot: number};
 
-const lado = (m: Momento) => ((m.semilla || 0) % 2 ? 1 : -1);
+const outCubicLocal = (x: number) => 1 - Math.pow(1 - x, 3);
+export const pasoK = (t: number, m: Momento) => {
+  const u = clamp((clamp((t - m.t0) / PASO) - 0.14) / 0.86);
+  return 1 - Math.pow(1 - u, 3.2);
+};
+const lado = (m: Momento) => ((m.ladoG ?? m.semilla ?? 0) % 2 ? 1 : -1);
 const CENTRO = {x: 540, y: 1120};                       // el centro del objeto (debajo del rótulo, encima de la zona que tapa Instagram)
-const TEXTO_TOP = 300, TEXTO_TOP_GRAFICO = 470, TARJETA_TOP = 710;
+const TEXTO_TOP = 300, TEXTO_TOP_GRAFICO = 470;
 
 /* ── LAS ENTRADAS (29-oct). Sergio: «hace un par de movimientos y repite el mismo ciclo». Cada lámina entra con una de
    cinco, por turno (dos seguidas nunca iguales):
@@ -45,6 +57,7 @@ const ENTRADAS: Entrada[] = ['sube', 'barre', 'aleja', 'cae', 'acerca'];
 const entradaDe = (m: Momento): Entrada => ENTRADAS[(m.orden ?? m.semilla ?? 0) % ENTRADAS.length];
 const fuerza = (m: Momento) => (m.clip ? 0.55 : m.objeto?.tipo === 'grafico' ? 0.5 : 1);
 const camDe = (t: number, m: Momento): Cam => {
+  if (m.paso) return {z: 1 + 0.025 * Math.sin((clamp((t - m.t0) / Math.max(0.5, m.t1 - m.t0)) * Math.PI) / 2), x: 0, y: 0};   // ya llegó viajando: solo sigue viva
   const e = entradaDe(m), l = lado(m), f = fuerza(m), z = (a: number) => 1 + (a - 1) * f;
   if (e === 'acerca') {
     const k = Math.sin((clamp((t - m.t0) / Math.max(0.5, m.t1 - m.t0)) * Math.PI) / 2);
@@ -59,10 +72,11 @@ const camDe = (t: number, m: Momento): Cam => {
 // cuando la cámara ya viene entrando («acerca»), menos (sumados lo agrandaban de más)
 const zoomDe = (t: number, m: Momento) => (m.zoomT != null && t >= m.zoomT && !m.clip
   ? (m.objeto?.tipo === 'grafico' ? 1.1 : entradaDe(m) === 'acerca' ? 1.14 : 1.22) * (1 + 0.03 * clamp((t - m.zoomT) / 1.5)) : 1);
-const entraDe = (t: number, m: Momento) => outCubic(p(t, m.t0, 0.55));   // 0 → 1: el objeto llega a su sitio (con desenfoque)
+const entraDe = (t: number, m: Momento) => (m.paso ? 1 : outCubicLocal(clamp((t - m.t0) / 0.55)));   // 0 → 1: el objeto llega a su sitio (con desenfoque)
 // dónde va el objeto mientras llega: corrido (dx, dy) y de qué tamaño (s, desde su centro OBJ_Y)
 const OBJ_Y = 1080;
 const objetoDe = (t: number, m: Momento) => {
+  if (m.paso) return {dx: 0, dy: 0, s: 1};
   const e = entradaDe(m), u = 1 - entraDe(t, m), l = lado(m);
   if (e === 'barre') return {dx: 260 * l * u, dy: 0, s: 1};
   if (e === 'cae') return {dx: 0, dy: -120 * u, s: 1};
@@ -82,17 +96,14 @@ const Encuadre: React.FC<{t: number; m: Momento; children: React.ReactNode}> = (
 };
 /* el fondo va detrás y se mueve menos (profundidad) */
 const Fondo: React.FC<{t: number; m: Momento}> = ({t, m}) => (
-  <Capa cam={camDe(t, m)} prof={0.35} extra={0.04}><FondoPlano t={t - m.t0} color={m.fondo} lado={lado(m)} /></Capa>
+  // un tramo de láminas pegadas es UN solo fondo: su persiana sigue corriendo y se desliza un poco cuando la cámara viaja
+  <Capa cam={camDe(t, m)} prof={0.35} extra={0.04}><FondoPlano t={t - (m.t00 ?? m.t0) - 4 + 4 * ((m.nPasos || 0) - (m.paso ? 1 - pasoK(t, m) : 0))} color={m.fondo} lado={lado(m)} /></Capa>
 );
 const esGrafico = (m: Momento, mat: Material) => m.objeto?.tipo === 'grafico' && !usaClip(m, mat);
 const Texto: React.FC<{t: number; m: Momento; mat: Material}> = ({t, m, mat}) => (
-  <Rotulo t={t} t1={m.t1} chica={m.texto.chica} gruesa={m.texto.gruesa} rojas={m.texto.rojas} a={m.tiempos} oscuro={esOscuro(m.fondo)} estilo={m.estiloTexto}
+  <Rotulo t={t} t1={m.sigue ? m.t1 + 99 : m.t1} chica={m.texto.chica} gruesa={m.texto.gruesa} rojas={m.texto.rojas} a={m.tiempos} oscuro={esOscuro(m.fondo)} estilo={m.estiloTexto} acento={m.acento}
     top={esGrafico(m, mat) ? TEXTO_TOP_GRAFICO : TEXTO_TOP} />
 );
-const desenfoqueEntrada = (t: number, m: Momento): React.CSSProperties => {
-  const e = entraDe(t, m);
-  return {opacity: clamp(e * 1.6), filter: e < 1 ? `blur(${(1 - e) * 14}px)` : undefined};
-};
 
 /* ── IMAGEN: el recorte sube a su sitio, con sombra de sol y su sombra en el piso; flota apenas (nunca se tuerce) ── */
 const Imagen: React.FC<P> = ({t, m, mat}) => {
@@ -119,172 +130,54 @@ const clipVideo = (t: number, m: Momento): Rect => {
   return {left: cx - (CLIP.w * s) / 2, top: cy - (CLIP.h * s) / 2, width: CLIP.w * s, height: CLIP.h * s, radio: CLIP.r * s, rot: 0};
 };
 
-/* ── GRÁFICOS: una tarjeta blanca con sombra, centrada; lo de adentro se anima en el segundo en que lo dices ── */
-const TINTA = R.tinta, GRIS = '#8a8079', AZUL = '#0095F6';
-const Tarjeta: React.FC<{t: number; m: Momento; ancho?: number; children: React.ReactNode}> = ({t, m, ancho = 900, children}) => (
-  <div style={{position: 'absolute', left: CENTRO.x - ancho / 2, top: TARJETA_TOP, width: ancho, ...desenfoqueEntrada(t, m)}}>
-    <div style={{width: '100%', boxSizing: 'border-box', padding: '64px 66px', borderRadius: 48, background: '#fff', boxShadow: sombraCaja(esOscuro(m.fondo)), fontFamily: urb, color: TINTA}}>{children}</div>
-  </div>
-);
-/* íconos de línea (nunca emojis) */
-const Icono: React.FC<{n: string; tam?: number; color?: string; grosor?: number}> = ({n, tam = 44, color = '#fff', grosor = 2.4}) => {
-  const d: Record<string, React.ReactNode> = {
-    persona: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></>,
-    ojo: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>,
-    corazon: <path d="M12 21s-7.5-4.6-9.5-9.3C1.2 8.4 3.3 4.5 7 4.5c2.1 0 3.6 1.2 5 3 1.4-1.8 2.9-3 5-3 3.7 0 5.8 3.9 4.5 7.2C19.5 16.4 12 21 12 21z" />,
-    moneda: <><circle cx="12" cy="12" r="9" /><path d="M14.8 9.2c-.6-.9-1.6-1.4-2.8-1.4-1.6 0-2.8.9-2.8 2.1 0 2.9 5.8 1.5 5.8 4.3 0 1.2-1.3 2.1-3 2.1-1.3 0-2.4-.5-3-1.4M12 6v1.8M12 16.3V18" /></>,
-    sube: <><path d="M3 17l6-6 4 4 8-8" /><path d="M15 7h6v6" /></>,
-    check: <path d="M4 12.5l5 5L20 6.5" />,
-  };
-  return <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={grosor} strokeLinecap="round" strokeLinejoin="round">{d[n] || d.sube}</svg>;
-};
-const iconoDe = (unidad = '') => /seguidor|persona|cliente|gente|usuario/i.test(unidad) ? 'persona' : /vista|reproduc|visual/i.test(unidad) ? 'ojo'
-  : /like|me gusta|corazon|corazón/i.test(unidad) ? 'corazon' : /peso|dólar|dolar|plata|dinero|venta|\$|usd|cop/i.test(unidad) ? 'moneda' : 'sube';
-const fmt = (n: number) => Math.round(n).toLocaleString('es-CO');
-
-/* el contador: la cifra sube durante la frase y LLEGA a su número cuando lo dices (la gruesa); termina SIEMPRE antes del
-   corte (al menos 0,6 s quieta para leerla); la barra se llena con ella */
-const Contador: React.FC<P> = ({t, m}) => {
-  const o = m.objeto, hasta = Number(o.hasta) || 0, a = m.t0 + 0.3;
-  const fin = clamp(Math.max((m.tiempos.gruesa || 0) + 0.35, a + 0.6), a + 0.6, Math.max(a + 0.6, m.t1 - 0.6));
-  const x = p(t, a, fin - a), k = fin - a > 1.6 ? Math.sin((x * Math.PI) / 2) : outCubic(x);
-  const txt = fmt(hasta), tam = txt.length > 9 ? 150 : txt.length > 7 ? 176 : 210;
-  return (
-    <Tarjeta t={t} m={m}>
-      <div style={{display: 'flex', alignItems: 'center', gap: 22}}>
-        <div style={{width: 100, height: 100, borderRadius: 30, display: 'grid', placeItems: 'center', background: 'linear-gradient(180deg,#c3202f,#9B111E 60%,#7a0c17)', boxShadow: '0 12px 24px rgba(155,17,30,.35)'}}>
-          <Icono n={iconoDe(o.unidad)} tam={56} /></div>
-        {o.unidad && <div style={{fontWeight: 600, fontSize: 52, color: GRIS}}>{o.unidad}</div>}
-      </div>
-      <div style={{position: 'relative', marginTop: 30, fontWeight: 800, fontSize: tam, lineHeight: 1, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums'}}>
-        <span style={{visibility: 'hidden'}}>{txt}</span>
-        <span style={{position: 'absolute', left: 0, top: 0, filter: k < 1 ? `blur(${(1 - k) * 3}px)` : undefined}}>{fmt(hasta * k)}</span>
-      </div>
-      <div style={{marginTop: 38, height: 22, borderRadius: 11, background: 'rgba(22,18,15,.08)', overflow: 'hidden'}}>
-        <div style={{width: `${k * 100}%`, height: '100%', borderRadius: 11, background: 'linear-gradient(90deg,#9B111E,#e0394a)'}} />
-      </div>
-    </Tarjeta>
-  );
-};
-
-const Barras: React.FC<P> = ({t, m}) => {
-  const bs = (m.objeto.barras || []).slice(0, 4), max = Math.max(1, ...bs.map((b) => Number(b.v) || 0)), a = m.t0 + 0.35, suf = m.objeto.sufijo || '';
-  return (
-    <Tarjeta t={t} m={m}>
-      <div style={{display: 'flex', flexDirection: 'column', gap: 40}}>
-        {bs.map((b, i) => {
-          const v = Number(b.v) || 0, k = outCubic(p(t, a + i * 0.2, 0.9)), top = v === max;
-          return (
-            <div key={i}>
-              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 46}}>
-                <span style={{fontWeight: 600, color: top ? TINTA : GRIS}}>{b.k}</span>
-                <span style={{fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: top ? R.rubi : TINTA}}>{fmt(v * k)}{suf}</span>
-              </div>
-              <div style={{marginTop: 16, height: 36, borderRadius: 18, background: 'rgba(22,18,15,.07)', overflow: 'hidden'}}>
-                <div style={{width: `${(v / max) * k * 100}%`, height: '100%', borderRadius: 18, background: top ? 'linear-gradient(90deg,#9B111E,#e0394a)' : '#cdc3b6'}} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </Tarjeta>
-  );
-};
-
-/* la foto de la cuenta: la tuya (un cuadro de tu video) o un círculo con la inicial */
-const Avatar: React.FC<{tam: number; foto?: string; cuenta: string; anillo?: boolean}> = ({tam, foto, cuenta, anillo}) => (
-  <div style={{width: tam, height: tam, borderRadius: '50%', padding: anillo ? 5 : 0, background: anillo ? 'linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7)' : undefined, boxSizing: 'border-box', flex: 'none'}}>
-    <div style={{width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: anillo ? '4px solid #fff' : undefined, boxSizing: 'border-box', background: '#d9cfc2',
-      display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: tam * 0.4, color: '#fff'}}>
-      {foto ? <Img src={foto} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 30%'}} /> : (cuenta[0] || 'c').toUpperCase()}
-    </div>
-  </div>
-);
-
-const Comentario: React.FC<P> = ({t, m, mat}) => {
-  const texto = m.objeto.texto || 'me encantó', cuenta = m.objeto.cuenta || 'tu_cuenta';
-  const a = m.t0 + 0.55, vel = 20, n = Math.max(0, Math.min(texto.length, Math.floor((t - a) * vel))), fin = a + texto.length / vel, pub = t > fin + 0.35;
-  const e = outCubic(p(t, fin + 0.35, 0.45));
-  return (
-    <Tarjeta t={t} m={m}>
-      <div style={{width: 90, height: 9, borderRadius: 5, background: 'rgba(22,18,15,.15)', margin: '-22px auto 22px'}} />
-      <div style={{textAlign: 'center', fontWeight: 800, fontSize: 36}}>Comentarios</div>
-      <div style={{height: 1.5, background: 'rgba(22,18,15,.1)', margin: '26px -60px 30px'}} />
-      <div style={{minHeight: 150}}>
-        {pub && (
-          <div style={{display: 'flex', gap: 22, alignItems: 'flex-start', opacity: clamp(e * 1.5), filter: e < 1 ? `blur(${(1 - e) * 12}px)` : undefined, transform: `translateY(${(1 - e) * 40}px)`}}>
-            <Avatar tam={78} foto={mat.foto} cuenta={cuenta} />
-            <div style={{flex: 1}}>
-              <div style={{fontSize: 30}}><span style={{fontWeight: 800}}>{cuenta}</span> <span style={{fontWeight: 600, color: GRIS}}>ahora</span></div>
-              <div style={{marginTop: 6, fontWeight: 600, fontSize: 40, lineHeight: 1.2}}>{texto}</div>
-            </div>
-            <div style={{paddingTop: 18}}><Icono n="corazon" tam={40} color={GRIS} grosor={2} /></div>
-          </div>
-        )}
-      </div>
-      <div style={{display: 'flex', alignItems: 'center', gap: 18, marginTop: 26}}>
-        <Avatar tam={70} foto={mat.foto} cuenta={cuenta} />
-        <div style={{flex: 1, display: 'flex', alignItems: 'center', minHeight: 80, padding: '0 26px', borderRadius: 40, border: '2px solid rgba(22,18,15,.14)', fontWeight: 600, fontSize: 34,
-          color: n && !pub ? TINTA : 'rgba(22,18,15,.4)', whiteSpace: 'nowrap', overflow: 'hidden'}}>
-          {!pub && n > 0 ? texto.slice(0, n) : 'Agrega un comentario…'}{!pub && n > 0 && Math.floor(t * 3) % 2 === 0 ? '|' : ''}
-        </div>
-        <div style={{fontWeight: 800, fontSize: 34, color: AZUL, opacity: n && !pub ? 1 : 0.35}}>Publicar</div>
-      </div>
-    </Tarjeta>
-  );
-};
-
-/* el puntero que llega y toca (dibujado, no un emoji) */
-const Puntero: React.FC<{x: number; y: number; toca: number}> = ({x, y, toca}) => (
-  <svg width={74} height={74} viewBox="0 0 24 24" style={{position: 'absolute', left: x, top: y, transform: `scale(${1 - 0.14 * toca})`, transformOrigin: '20% 15%', filter: 'drop-shadow(4px 8px 8px rgba(0,0,0,.3))'}}>
-    <path d="M5 2.5l13.5 11.2-6.3.7 3.6 6.9-2.6 1.3-3.6-6.9L5 20.2z" fill="#fff" stroke={TINTA} strokeWidth={1.4} strokeLinejoin="round" />
-  </svg>
-);
-const Seguir: React.FC<P> = ({t, m, mat}) => {
-  const cuenta = m.objeto.cuenta || 'tu_cuenta', base = Number(m.objeto.seguidores) || 12400;
-  const llega = outCubic(p(t, m.t0 + 0.45, 0.6)), clic = m.t0 + 1.1, toca = clamp(1 - Math.abs(t - clic) / 0.12), sigue = t >= clic;
-  const pulso = sigue ? 1 + 0.05 * Math.sin(clamp((t - clic) / 0.3) * Math.PI) : 1;
-  return (
-    <Tarjeta t={t} m={m}>
-      <div style={{display: 'flex', alignItems: 'center', gap: 40}}>
-        <Avatar tam={170} foto={mat.foto} cuenta={cuenta} anillo />
-        <div style={{flex: 1, display: 'flex', justifyContent: 'space-between', textAlign: 'center'}}>
-          {[['publicaciones', 128], ['seguidores', base + (sigue ? 1 : 0)], ['seguidos', 312]].map(([k, v], i) => (
-            <div key={i}><div style={{fontWeight: 800, fontSize: 46, fontVariantNumeric: 'tabular-nums', color: i === 1 && sigue ? R.rubi : TINTA}}>{fmt(v as number)}</div>
-              <div style={{fontWeight: 600, fontSize: 28, color: GRIS, marginTop: 4}}>{k}</div></div>
-          ))}
-        </div>
-      </div>
-      <div style={{marginTop: 30, fontWeight: 800, fontSize: 40}}>{cuenta}</div>
-      <div style={{position: 'relative', marginTop: 34}}>
-        <div style={{height: 92, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, fontWeight: 800, fontSize: 38,
-          background: sigue ? '#efefef' : AZUL, color: sigue ? TINTA : '#fff', transform: `scale(${pulso * (1 - 0.03 * toca)})`}}>
-          {sigue && <Icono n="check" tam={40} color={TINTA} grosor={2.8} />}{sigue ? 'Siguiendo' : 'Seguir'}
-        </div>
-        <Puntero x={lerp(620, 380, llega) + (t > clic ? (t - clic) * 60 : 0)} y={lerp(260, 30, llega) + (t > clic ? (t - clic) * 40 : 0)} toca={toca} />
-      </div>
-    </Tarjeta>
-  );
-};
-const GRAFICOS: Record<string, React.FC<P>> = {contador: Contador, barras: Barras, comentario: Comentario, seguir: Seguir};
-
 /* ── LA LÁMINA: qué objeto lleva y dónde va tu video ── */
+/* ── EL PASO DE UNA LÁMINA A LA OTRA. Medido en la referencia (kayn.marketing, seg. 2,50): arranca suave, en 0,3 s ya recorrió el
+   85 % y luego se asienta; todo se va junto (objeto y texto), como si fuera un solo lienzo y la cámara se moviera por él ── */
 const usaClip = (m: Momento, mat: Material) => m.objeto?.tipo === 'clip' || (m.objeto?.tipo === 'imagen' && !mat.objeto) || (m.objeto?.tipo === 'grafico' && !GRAFICOS[m.objeto.grafico || '']);
 const conClip = (m: Momento, mat: Material): Momento => (m.clip === usaClip(m, mat) ? m : {...m, clip: usaClip(m, mat)});
+const enPaso = (t: number, m: Momento) => !!m.paso && t < m.t0 + PASO;
+const dirDe = (m: Momento) => (m.paso?.dir === 'izq' ? [-1, 0] : m.paso?.dir === 'abajo' ? [0, 1] : [1, 0]);
+const offAnt = (t: number, m: Momento) => { const k = pasoK(t, m), d = dirDe(m); return {x: -1080 * d[0] * k, y: -1920 * d[1] * k}; };
+const offCur = (t: number, m: Momento) => { const k = 1 - pasoK(t, m), d = dirDe(m); return {x: 1080 * d[0] * k, y: 1920 * d[1] * k}; };
+const Mundo: React.FC<{d: {x: number; y: number}; children: React.ReactNode}> = ({d, children}) => <AbsoluteFill style={{transform: `translate(${d.x}px,${d.y}px)`}}>{children}</AbsoluteFill>;
+const Panel: React.FC<P> = ({t, m, mat}) => {
+  if (m.clip) return <Texto t={t} m={m} mat={mat} />;   // tu video va debajo, en el hueco
+  const G = m.objeto.tipo === 'grafico' ? GRAFICOS[m.objeto.grafico || ''] : null;
+  return <><Encuadre t={t} m={m}>{G ? <G t={t} m={m} mat={mat} /> : <Imagen t={t} m={m} mat={mat} />}</Encuadre><Texto t={t} m={m} mat={mat} /></>;
+};
+const anteriorDe = (m: Momento) => ({m: conClip(m.paso!.ant.m, m.paso!.ant.mat), mat: m.paso!.ant.mat});
 const LaminaFrente: React.FC<P> = (pr0) => {
   const pr = {...pr0, m: conClip(pr0.m, pr0.mat)}, {t, m, mat} = pr;
-  if (m.clip) return <AbsoluteFill><Texto t={t} m={m} mat={mat} /></AbsoluteFill>;   // tu video va debajo, en el hueco
-  const G = m.objeto.tipo === 'grafico' ? GRAFICOS[m.objeto.grafico || ''] : null;
+  if (enPaso(t, m)) {
+    const a = anteriorDe(m);
+    return (
+      <AbsoluteFill>
+        {!a.m.clip && !m.clip && <Fondo t={t} m={m} />}
+        <Mundo d={offAnt(t, m)}><Panel t={t} m={a.m} mat={a.mat} /></Mundo>
+        <Mundo d={offCur(t, m)}><Panel t={t} m={m} mat={mat} /></Mundo>
+      </AbsoluteFill>
+    );
+  }
+  if (m.clip) return <AbsoluteFill><Texto t={t} m={m} mat={mat} /></AbsoluteFill>;
   return (
     <AbsoluteFill>
       <Fondo t={t} m={m} />
-      <Encuadre t={t} m={m}>{G ? <G {...pr} /> : <Imagen {...pr} />}</Encuadre>
-      <Texto t={t} m={m} mat={mat} />
+      <Panel t={t} m={m} mat={mat} />
     </AbsoluteFill>
   );
 };
 const LaminaFondo: React.FC<P> = ({t, m: m0, mat}) => {
   const m = conClip(m0, mat);
+  if (enPaso(t, m)) {
+    const a = anteriorDe(m);
+    return (
+      <AbsoluteFill>
+        <Fondo t={t} m={m} />
+        {a.m.clip && <Mundo d={offAnt(t, m)}><Encuadre t={t} m={a.m}><ClipSombra t={t} m={a.m} /></Encuadre></Mundo>}
+        {m.clip && <Mundo d={offCur(t, m)}><Encuadre t={t} m={m}><ClipSombra t={t} m={m} /></Encuadre></Mundo>}
+      </AbsoluteFill>
+    );
+  }
   return (
     <AbsoluteFill>
       <Fondo t={t} m={m} />
@@ -297,6 +190,13 @@ const LaminaFondo: React.FC<P> = ({t, m: m0, mat}) => {
    video: null = tu video no se ve (la lámina lo tapa todo) · 'camara' = sigue con su cámara · Rect = en ese hueco */
 type Plantilla = {frente: React.FC<P>; fondo?: React.FC<P>; video: (t: number, m: Momento, mat: Material) => null | 'camara' | Rect};
 export const PLANTILLAS: Record<string, Plantilla> = {
-  lamina: {frente: LaminaFrente, fondo: LaminaFondo, video: (t, m, mat) => (usaClip(m, mat) ? clipVideo(t, conClip(m, mat)) : null)},
+  lamina: {frente: LaminaFrente, fondo: LaminaFondo, video: (t, m0, mat) => {
+    const m = conClip(m0, mat);
+    if (enPaso(t, m)) {
+      const a = anteriorDe(m), mueve = (r: Rect, d: {x: number; y: number}): Rect => ({...r, left: r.left + d.x, top: r.top + d.y});
+      return m.clip ? mueve(clipVideo(t, m), offCur(t, m)) : a.m.clip ? mueve(clipVideo(t, a.m), offAnt(t, m)) : null;
+    }
+    return m.clip ? clipVideo(t, m) : null;
+  }},
 };
 export const tieneFondo = (m: Momento, mat: Material) => !!PLANTILLAS[m.plantilla]?.fondo && PLANTILLAS[m.plantilla].video(m.t0, m, mat) !== null;

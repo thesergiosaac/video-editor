@@ -382,9 +382,10 @@ async function pedirPlanCV(renderId: string, words: any[]): Promise<void> {
 /* Gráficos (v196): cuántos y de qué color. Sin cantidad = apagados. */
 function limpiarGraficos(g: any): Record<string, unknown> | null {
   if (esCamaraViva(g)) {   // (29-oct) Cámara viva: el color del fondo de las láminas (o el de la ficha) y el estilo de las imágenes
-    const f = String(g.fondo_cv || ''), e = String(g.estilo_imagenes || '')
+    const f = String(g.fondo_cv || ''), e = String(g.estilo_imagenes || ''), tt = String(g.estilo_titulos || ''), ac = String(g.acento_cv || '')
     return { cantidad: 'medio', estilo: 'camara_viva', ...(/^#[0-9a-fA-F]{6}$/.test(f) ? { fondo_cv: f } : {}),
-             ...(/^[a-z0-9_]{2,24}$/.test(e) ? { estilo_imagenes: e } : {}) }
+             ...(/^[a-z0-9_]{2,24}$/.test(e) ? { estilo_imagenes: e } : {}), ...(/^[a-z0-9_]{2,24}$/.test(tt) ? { estilo_titulos: tt } : {}),
+             ...(/^#[0-9a-fA-F]{6}$/.test(ac) ? { acento_cv: ac } : {}) }
   }
   if (!g || typeof g !== 'object' || !['pocos', 'medio', 'muchos'].includes(String(g.cantidad))) return null
   const c = String(g.color || 'cherry')

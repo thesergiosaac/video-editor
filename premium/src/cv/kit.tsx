@@ -7,6 +7,7 @@ import React from 'react';
 import {AbsoluteFill, Img} from 'remotion';
 import {loadFont as cargarUrbanist} from '@remotion/google-fonts/Urbanist';
 import {loadFont as cargarCaslon} from '@remotion/google-fonts/LibreCaslonText';
+import {legibleSobre, sobreDe, degradadoDe} from './tema';
 
 export const urb = cargarUrbanist('normal', {weights: ['600', '800'], subsets: ['latin']}).fontFamily;
 // Libre Caslon itálica solo existe en 400 (pedir otro peso tumba el visor)
@@ -151,9 +152,8 @@ const limpia = (w: string) => w.replace(/[.,¿?¡!…«»"]/g, '').toLowerCase()
 /* (30-oct) la letra y los colores de una plantilla de subtítulos (subtitulos.js › estiloTitulo). Sin estilo, lo de siempre */
 export type LetraEstilo = {fam: string; peso: number; it?: boolean; esp?: number; mayus?: boolean};
 export type EstiloTexto = {id: string; gruesa: LetraEstilo; chica: LetraEstilo; texto: string; acento: string};
-const esClaro = (hex: string) => { const n = parseInt(String(hex).slice(1), 16); return (0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255)) / 255 > 0.6; };
-export const Palabras: React.FC<{t: number; a: number; texto: string; rojas?: string[]; claro?: boolean; tipo?: TipoLetra; tam: number; alinear?: 'left' | 'right' | 'center'; paso?: number; estilo?: EstiloTexto | null; style?: React.CSSProperties}> = ({
-  t, a, texto, rojas = [], claro = false, tipo = 'gruesa', tam, alinear = 'left', paso = 0.07, estilo = null, style,
+export const Palabras: React.FC<{t: number; a: number; texto: string; rojas?: string[]; claro?: boolean; tipo?: TipoLetra; tam: number; alinear?: 'left' | 'right' | 'center'; paso?: number; estilo?: EstiloTexto | null; acento?: string | null; style?: React.CSSProperties}> = ({
+  t, a, texto, rojas = [], claro = false, tipo = 'gruesa', tam, alinear = 'left', paso = 0.07, estilo = null, acento = null, style,
 }) => {
   const le = estilo ? (tipo === 'gruesa' ? estilo.gruesa : estilo.chica) : null;
   const fam: React.CSSProperties = le ? {fontFamily: le.fam, fontWeight: le.peso, fontStyle: le.it ? 'italic' : 'normal', lineHeight: 1.05,
@@ -165,7 +165,9 @@ export const Palabras: React.FC<{t: number; a: number; texto: string; rojas?: st
   const rojasL = rojas.map(limpia);
   const sombra = claro ? '0 10px 24px rgba(60,30,20,.18)' : '0 6px 26px rgba(0,0,0,.55)';
   // con estilo: la palabra clave va en su color, sin caja (sobre el fondo claro de una lámina, un acento claro no se leería)
-  const colorEst = estilo ? (claro ? (esClaro(estilo.acento) ? R.rubi : estilo.acento) : estilo.acento) : null;
+  // (30-oct) el color de acento manda sobre el de la plantilla; sobre un fondo claro, se oscurece lo justo para que se lea
+  const baseAc = acento || (estilo ? estilo.acento : R.rubi);
+  const colorEst = claro ? legibleSobre(baseAc, '#ECE4D6') : baseAc;
   return (
     <div style={{...fam, fontSize: tam, color: claro ? R.tinta : estilo ? estilo.texto : R.blanco, textAlign: alinear, ...style}}>
       {texto.split(' ').map((pal, i) => {
@@ -175,9 +177,9 @@ export const Palabras: React.FC<{t: number; a: number; texto: string; rojas?: st
         const caja = conCaja ? outCubic(p(t, a + i * paso + 0.12, 0.35)) : 0;
         return (
           <span key={i} style={{display: 'inline-block', position: 'relative', marginRight: '0.24em', opacity: clamp(e * 2.2), filter: e < 1 ? `blur(${(1 - e) * 22}px)` : undefined,
-            transform: `translateY(${(1 - e) * 34}px) scale(${lerp(1.14, 1, e)})`, transformOrigin: '50% 80%', color: roja && estilo ? colorEst! : roja && claro ? R.rubi : undefined, textShadow: conCaja ? 'none' : sombra}}>
+            transform: `translateY(${(1 - e) * 34}px) scale(${lerp(1.14, 1, e)})`, transformOrigin: '50% 80%', color: conCaja ? sobreDe(baseAc) : roja ? colorEst : undefined, textShadow: conCaja ? 'none' : sombra}}>
             {conCaja && <span style={{position: 'absolute', left: '-0.1em', right: '-0.1em', top: '0.08em', bottom: '-0.02em', borderRadius: '0.12em', zIndex: -1,
-              background: 'linear-gradient(180deg,#c3202f,#9B111E 55%,#760b16)', boxShadow: '0 10px 24px rgba(0,0,0,.45)', transformOrigin: '0 50%', transform: `scaleX(${caja})`}} />}
+              background: degradadoDe(baseAc), boxShadow: '0 10px 24px rgba(0,0,0,.45)', transformOrigin: '0 50%', transform: `scaleX(${caja})`}} />}
             <span style={{position: 'relative'}}>{pal}</span>
           </span>
         );
@@ -239,8 +241,8 @@ export function tamLinea(texto: string, ancho: number, max: number, peso: number
    desenfoque en el segundo en que la dices; justo antes del corte, todo sale desenfocándose. Tamaños fijos (46 y 112): solo
    bajan si la línea no cabe en el renglón */
 export const TAM = {chica: 46, gruesa: 112, arriba: 300};
-export const Rotulo: React.FC<{t: number; t1: number; chica?: string; gruesa?: string; rojas?: string[]; a: {chica: number; gruesa: number}; oscuro?: boolean; top?: number; estilo?: EstiloTexto | null}> = ({
-  t, t1, chica, gruesa, rojas, a, oscuro = false, top = TAM.arriba, estilo = null,
+export const Rotulo: React.FC<{t: number; t1: number; chica?: string; gruesa?: string; rojas?: string[]; a: {chica: number; gruesa: number}; oscuro?: boolean; top?: number; estilo?: EstiloTexto | null; acento?: string | null}> = ({
+  t, t1, chica, gruesa, rojas, a, oscuro = false, top = TAM.arriba, estilo = null, acento = null,
 }) => {
   const ancho = 1080 - 2 * MARGEN.lado, sale = clamp((t - (t1 - 0.24)) / 0.24);
   // con estilo, el tamaño se mide con SU letra (si no, una serif ancha se saldría del renglón)
@@ -249,7 +251,7 @@ export const Rotulo: React.FC<{t: number; t1: number; chica?: string; gruesa?: s
   return (
     <div style={{position: 'absolute', left: MARGEN.lado, top, width: ancho, textAlign: 'center', whiteSpace: 'nowrap', opacity: 1 - sale, filter: sale > 0 ? `blur(${sale * 18}px)` : undefined}}>
       {chica && <Palabras t={t} a={a.chica} texto={chica} tipo="chica" claro={!oscuro} estilo={estilo} tam={tamC(chica)} alinear="center" paso={0.06} style={{opacity: 0.86}} />}
-      {gruesa && <Palabras t={t} a={a.gruesa} texto={gruesa} rojas={rojas} claro={!oscuro} estilo={estilo} tam={tamG(gruesa)} alinear="center" style={{marginTop: chica ? 10 : 0}} />}
+      {gruesa && <Palabras t={t} a={a.gruesa} texto={gruesa} rojas={rojas} claro={!oscuro} estilo={estilo} acento={acento} tam={tamG(gruesa)} alinear="center" style={{marginTop: chica ? 10 : 0}} />}
     </div>
   );
 };

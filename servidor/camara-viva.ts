@@ -208,9 +208,24 @@ async function firmar(metodo: 'PUT' | 'GET', key: string, host: string, segundos
 /* Un momento editado: solo lo que se puede corregir, con textos cortos (como los del director). m.orig = lo que él armó */
 const corto = (v: unknown, n = 60) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
 const rojasDe = (r: unknown) => (Array.isArray(r) ? r : []).map((w) => corto(w, 40)).filter(Boolean).slice(0, 4)
+/* Lo que lleva la lámina: una imagen, tu clip o un gráfico con sus datos (solo textos cortos, números y listas pequeñas) */
+function objetoLimpio(o: any): any {
+  if (o?.tipo === 'imagen') return { tipo: 'imagen', es: corto(o.es, 140), ve: corto(o.ve, 600) }
+  if (o?.tipo !== 'grafico' || !/^[a-z_]{3,20}$/.test(String(o.grafico))) return { tipo: 'clip' }
+  const s: any = { tipo: 'grafico', grafico: String(o.grafico) }
+  for (const k of Object.keys(o).slice(0, 12)) {
+    if (k === 'tipo' || k === 'grafico' || !/^[a-z_]{1,16}$/.test(k)) continue
+    const v = o[k]
+    if (typeof v === 'number' && isFinite(v)) s[k] = v
+    else if (typeof v === 'string') s[k] = corto(v, 60)
+    else if (Array.isArray(v)) s[k] = v.slice(0, 4).map((x: any) => (x && typeof x === 'object' ? { k: corto(x.k, 22), v: Number(x.v) || 0 } : corto(x, 60)))
+  }
+  return s
+}
 function limpiarCambios(m: any, c: any): any {
   if (!m.orig) m.orig = { tipo: m.tipo, camara: m.camara }
-  if ((c.tipo === 'hablando' && m.orig.tipo === 'lamina') || c.tipo === m.orig.tipo) m.tipo = c.tipo   // quitar una lámina, o devolverla
+  if (c.tipo === 'hablando' || c.tipo === 'lamina') m.tipo = c.tipo   // quitar una lámina, devolverla, o volver lámina un tramo tuyo
+  if (c.objeto) m.objeto = objetoLimpio(c.objeto)
   if (['corre', 'golpe', 'suave'].includes(c.camara)) m.camara = c.camara
   if (typeof c.camaraFija === 'boolean') { if (c.camaraFija) m.camaraFija = true; else { delete m.camaraFija; m.camara = m.orig.camara } }
   if ('titulo' in c) {

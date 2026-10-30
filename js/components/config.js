@@ -524,6 +524,7 @@
         h('div', { class: 'row__desc', style: { marginBottom: '16px', color: e.error ? 'var(--danger, #e5484d)' : '' } },
           e.cargando ? h('span', { class: 'spinner' }) : null, e.cargando ? ' ' : '', e.texto),
         C.cvVivo.panelEstiloTitulos(),
+        C.cvVivo.panelAcento(),
         C.cvVivo.panelImagenes(),
         ui.label('Fondo de las láminas'),
         h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Fondo de las láminas' }, FONDOS_CV.map((f) => h('button', {

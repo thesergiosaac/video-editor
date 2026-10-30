@@ -119,10 +119,20 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
      Día 4 (`C.subs.paraCamaraViva`: una línea, blanca, sombra, al 72 %, quieta, Manrope Bold mientras el ensamblador no tenga
      Urbanist); si la cara baja hasta él, baja hasta 110 px (`cvvivo`). Lo escogido por la persona no se toca. `cvTituloEstilo` +
      `C.subs.estiloTitulo(id)`: títulos y láminas toman letra y colores de cualquier plantilla (leídos de ROLES/MARCA; una plantilla
-     nueva sale sola), con la misma entrada y lugar. ⚠️ Entrega 4: `limpiarGraficos` (orchestrate) debe dejar pasar `estilo_titulos`.
+     nueva sale sola), con la misma entrada y lugar. `limpiarGraficos` (orchestrate) ya deja pasar `estilo_titulos` y `acento_cv`.
    - **Línea de tiempo y corrección (30-oct):** todos los momentos van en la pista Gráficos (`cvvivo.enLinea`), SIN letras para que no parezcan subtítulos (`manual.cuerpoCV`): lámina = su imagen o un ícono, título = barra con T, tú hablando = línea tenue; el nombre sale al pasar el mouse. Al tocar uno,
      `manual.js › panelCV`: texto, palabra roja, cámara y quitar (la lámina vuelve a «tú hablando»), con Ctrl+Z. `editar_momento`
      guarda en `plan.momentos[i]` y deja `m.orig`: `planos` cuenta sus turnos con eso, para que editar uno no mueva los demás.
+   - **Los 20 gráficos (30-oct, aprobados por Sergio):** `premium/src/cv/graficos.tsx` dice QUÉ se mueve; `tema.ts` pone colores, tarjeta y
+     sombras. «Esos gráficos siempre van a ser los mismos, lo único que cambia es el estilo»: un estilo nuevo = otro tema, no otros gráficos.
+     Se listan en la ficha (`lamina.objetos[grafico].graficos`, con `campos`, `req` y `ejemplo`); el director los lee de ahí, y uno al que le
+     falte un dato `req` sale como tu clip: nunca se inventan cifras. `reloj()` aprieta la animación si la lámina es corta.
+   - **Color de acento (30-oct):** `cvAcento` (`acento_cv` en el proyecto). Sin escoger: el de la plantilla de títulos, si no el de los
+     subtítulos (`C.subs.acentoDe`), si no rubí. Pinta gráficos y palabras clave; sobre un fondo claro se oscurece lo justo para leerse.
+   - **Lámina y lámina (30-oct):** referencia instagram.com/p/DZt2BtXPz8Q, seg. 2,50 (medida cuadro a cuadro). Dos láminas a menos de 0,6 s
+     comparten fondo y la cámara viaja de una a la otra en 0,55 s (`camara-viva.js › piezas` → `m.paso`; `laminas.tsx › enPaso`), con texto y
+     objeto juntos: hacia la derecha, y una de cada tres hacia abajo. Si las dos llevan tu video no se puede (es uno solo) y la segunda entra como siempre.
+   - **Qué lleva cada lámina (30-oct):** en el panel: Tú hablando / Lámina y Imagen / Tu clip / Gráfico, con sus datos (`objetoLimpio` en `camara-viva.ts`).
    Falta (entrega 4): el video final en el ensamblador (formas `encima` y `tarjeta`).
 5. Las imágenes: pantalla «Las imágenes de tu video», subir y acomodar, crear con Nano Banana con créditos, biblioteca.
    ⭐ **El estilo de las imágenes se escoge en CADA video** (Sergio, 29-oct: nunca «una vez por marca»): viene marcado el último
