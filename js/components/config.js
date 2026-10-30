@@ -507,10 +507,6 @@
   /* (29-oct) LA CÁMARA VIVA: el estilo con el que sale Cherry (cvvivo.js la muestra en el celular). Mientras Sergio la prueba
      en el editor, solo los administradores la ven y pueden volver a los de antes; al lanzar queda sola. */
   const ESTILOS_CV = [{ id: 'camara_viva', name: 'Cámara viva' }, { id: 'antes', name: 'Vidrio y persiana' }];
-  const FONDOS_CV = [
-    { id: '', name: 'Crema', hex: '#ECE4D6' }, { id: '#f4f2ee', name: 'Blanco', hex: '#F4F2EE' },
-    { id: '#d9d4cc', name: 'Piedra', hex: '#D9D4CC' }, { id: '#1c1b1e', name: 'Noche', hex: '#1C1B1E' },
-  ];
   function elegirCV(s) {
     return C.frag(
       ui.label('Estilo (en prueba: solo lo ven los administradores)'),
@@ -518,7 +514,7 @@
         (id) => C.setState({ grafEstilo: id === 'camara_viva' ? 'camara_viva' : 'clasico' }), { marginBottom: '16px' }));
   }
   function seccionCamaraViva(s) {
-    const e = C.cvVivo.estado(), fondo = s.grafFondoCV || '';
+    const e = C.cvVivo.estado(), fondo = s.grafFondoCV || '', FONDOS_CV = C.cvVivo.FONDOS;
     const aMano = !!fondo && !FONDOS_CV.some((f) => f.id === fondo);
     return C.frag(
       ui.switchRow('Gráficos', 'La Cámara viva: la cámara se acerca a ti y te corre a un lado mientras tu título entra al lado de tu cara. Entre frase y frase, láminas simples: un fondo con la sombra de una persiana, un objeto (una imagen, tu video en un recuadro o un gráfico) y dos líneas de texto.',

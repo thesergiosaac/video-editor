@@ -746,7 +746,8 @@
     } catch (e) { piezas = []; }
     let escenas = [];
     try {
-      if (AP && ecfg.cantidad && D.apoyo) escenas = AP.elegir(D.apoyo, palN, aReal, ecfg, dur, piezas.map((p) => ({ t0: p.t0, t1: p.t1 }))) || [];
+      // (29-oct) la Cámara viva no lleva escenas de apoyo (fondo, objeto, títulos y cámara: nada más); el celular tampoco las muestra
+      if (AP && ecfg.cantidad && D.apoyo && gcfg.estilo !== 'camara_viva') escenas = AP.elegir(D.apoyo, palN, aReal, ecfg, dur, piezas.map((p) => ({ t0: p.t0, t1: p.t1 }))) || [];
     } catch (e) { escenas = []; }
     PUESTOS.clave = clave; PUESTOS.d = D; PUESTOS.g = D.graficos; PUESTOS.a = D.apoyo; PUESTOS.e = null;
     PUESTOS.val = { graficos: piezas.filter((p) => !p.pantalla), escenas, pantallas: piezas.filter((p) => p.pantalla) };

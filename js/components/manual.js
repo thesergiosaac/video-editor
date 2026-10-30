@@ -1100,6 +1100,7 @@
   }
 
   async function otrosGraficos(it) {
+    if (C.cvVivo && C.cvVivo.activo()) return;   // (29-oct) la Cámara viva lleva su plan: pedir los de vidrio lo pisaría
     const render = C.cortesVivo.idBase();
     if (!render || U.regen) return;
     const ms = (C.grafVivo && C.grafVivo.momentos && C.grafVivo.momentos()) || [];
@@ -1978,12 +1979,37 @@
         h('b', null, o.nombre), h('small', null, coma(o.dur) + ' s'),
         h('button', { type: 'button', class: 'mn-ib mn-ib--chico', 'aria-label': 'Agregar en la línea blanca', title: 'Agregar en la línea blanca', onClick: () => agregarSonido(o.id, ahora()) }, ico('mas'))))));
   }
+  /* (29-oct) LA CÁMARA VIVA (cvvivo.js): en qué va el plan y el fondo de las láminas. Mientras Sergio la prueba solo la ven
+     los administradores, que también pueden volver a los de antes. */
+  function libCamaraViva(tarjeta) {
+    const s = C.state, CVV = C.cvVivo, e = CVV.estado(), fondo = s.grafFondoCV || '';
+    const punto = (hex) => h('i', { style: { display: 'inline-block', width: '10px', height: '10px', borderRadius: '50%', background: hex,
+      border: '1px solid rgba(255,255,255,.35)', marginRight: '6px', verticalAlign: '-1px' } });
+    return h('div', { style: { display: 'grid', gap: '14px', maxWidth: '560px' } },
+      tarjeta('Cámara viva', e.texto, e.cargando ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Armando…') : null),
+      h('div', { class: 'mn-campo' }, h('span', null, 'Fondo de las láminas'),
+        h('div', { class: 'mn-chips' }, CVV.FONDOS.map((f) => chip([punto(f.hex), f.name], fondo === f.id, () => { C.setState({ grafFondoCV: f.id || null }); firmaP = ''; pintarPanel(); })))),
+      h('div', { class: 'mn-chips' },
+        accion(null, 'Quitar la Cámara viva', () => { C.setState({ grafOn: false }); aviso('Cámara viva quitada'); }, 'mn-ac--chico'),
+        accion(null, 'Usar los de antes (vidrio)', () => { C.setState({ grafEstilo: 'clasico' }); aviso('Gráficos de vidrio'); }, 'mn-ac--chico')));
+  }
   function libGraficos() {
     const s = C.state, gen = U.regen && U.regen.id === '*';
     const tarjeta = (titulo, texto, boton) => h('div', { class: 'mn-graf-card' }, h('span', { class: 'mn-graf-ic' }, ico('graficos')),
       h('div', null, h('b', null, titulo), h('span', null, texto)), boton);
     if (X.ed) return tarjeta('Tu video lleva una edición a mano', 'Sus capas son los gráficos de este video.',
       accion(null, 'Quitar la edición', () => cambiarEdicion({ activa: false }, 'Se quitó la edición a mano: vuelven los gráficos y escenas de Cherry'), 'mn-ac--rojo'));
+    const conCV = !!(C.cvVivo && C.cvVivo.disponible());
+    if (conCV && C.cvVivo.activo()) return libCamaraViva(tarjeta);
+    if (conCV && !s.grafOn) return h('div', { style: { display: 'grid', gap: '14px', maxWidth: '560px' } },
+      tarjeta('Cámara viva', 'La cámara se acerca a ti y tu título entra al lado de tu cara; entre frase y frase, láminas con un objeto y dos líneas de texto.',
+        accion('mas', 'Poner la Cámara viva', () => { C.setState({ grafOn: true, grafEstilo: 'camara_viva' }); aviso('Cámara viva puesta: Cherry está armando tu edición'); }, 'mn-ac--prim')),
+      h('div', { class: 'mn-chips' }, accion(null, 'Usar los de antes (vidrio)', () => { C.setState({ grafOn: true, grafEstilo: 'clasico' }); aviso('Gráficos puestos'); }, 'mn-ac--chico')));
+    if (conCV && s.grafOn) return h('div', { style: { display: 'grid', gap: '14px', maxWidth: '560px' } }, libGraficosAntes(s, gen, tarjeta),
+      h('div', { class: 'mn-chips' }, accion(null, 'Cambiar a la Cámara viva', () => { C.setState({ grafEstilo: 'camara_viva' }); aviso('Cámara viva puesta: Cherry está armando tu edición'); }, 'mn-ac--chico')));
+    return libGraficosAntes(s, gen, tarjeta);
+  }
+  function libGraficosAntes(s, gen, tarjeta) {
     if (s.grafOn) return tarjeta('Gráficos de Cherry', 'Para cambiar uno solo, tócalo en la línea de tiempo.',
       gen ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Buscando', U.regen.eta ? [' · ', h('span', { 'data-eta': U.regen.eta.id }, U.regen.eta.texto())] : '…')
         : accion('otra', 'Cambiar todos', () => otrosGraficos(null), 'mn-ac--prim', { title: 'La IA vuelve a leer lo que dices y marca otros momentos' }));
@@ -2008,7 +2034,8 @@
     if (U.sel && !it) U.sel = null;
     const CA = U.catAbierta && CATT[U.catAbierta];
     const firma = JSON.stringify([U.lib, U.tab, U.sel, U.catSon, U.catAbierta || '', CA ? (CA.tomas ? CA.tomas.length : CA.pidiendo ? 'p' : 'e') : '',
-      CATS.fotos ? Object.keys(CATS.fotos).length : 0, !!U.regen, s.grafOn, s.vozEstudio,
+      CATS.fotos ? Object.keys(CATS.fotos).length : 0, !!U.regen, s.grafOn, s.vozEstudio, s.grafEstilo, s.grafFondoCV || '',
+      C.cvVivo && C.cvVivo.activo() ? C.cvVivo.estado().texto : '',
       (s.clips || []).map((c) => c.id + (c.thumbnail_url ? '+' : '')).join('|'),
       X.frases.length, X.graficos.length, X.escenas.length, X.efectos.length, X.modo, !!X.ed, X.tomas.map((t) => [t.clip && t.clip.id, t.i, !!t.encima]),
       it ? [it.t0, it.t1, it.f || it.x || it.g || null, it.zona || null] : null, X.subs && it && it.f ? X.subs.palabras.slice(it.f.desde, it.f.hasta + 1) : null,

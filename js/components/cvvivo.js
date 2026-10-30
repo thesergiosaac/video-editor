@@ -15,8 +15,14 @@
   const CV_PARA_TODOS = false;
   const VISTA_JS = 'js/vista-cv.js?v=20261029cv1', CARAS_JS = 'js/caras.js?v=20261029cv1';
   const CADA_MS = 6000;     // cada cuánto se pregunta por el plan mientras el director trabaja (≈ 90 s)
+  const TARDA_S = 95;       // lo que tarda el director (medido: 89 a 97 s); lo que dice el aviso del celular
+  /* los fondos de las láminas que se ofrecen (la pestaña Gráficos de Automático y la del Manual) */
+  const FONDOS = [
+    { id: '', name: 'Crema', hex: '#ECE4D6' }, { id: '#f4f2ee', name: 'Blanco', hex: '#F4F2EE' },
+    { id: '#d9d4cc', name: 'Piedra', hex: '#D9D4CC' }, { id: '#1c1b1e', name: 'Noche', hex: '#1C1B1E' },
+  ];
 
-  const E = { id: null, plan: null, avisos: [], estado: '', error: '', proxima: 0, pidiendo: false,
+  const E = { id: null, plan: null, avisos: [], estado: '', error: '', proxima: 0, pidiendo: false, desde: 0, aviso: null,
               caras: null, carasId: null, buscando: false, avance: 0, foto: null,
               clave: '', prep: null, piezas: null, camara: null, fondo: null, frente: null, caja: null, tocados: [], callado: null };
   const cargas = {};
@@ -48,7 +54,7 @@
   const idDe = (ctx) => (ctx && typeof ctx.id === 'string' ? ctx.id.replace(/^(base|render):/, '') : null);
 
   function nuevoVideo(id) {
-    Object.assign(E, { id, plan: null, avisos: [], estado: 'pidiendo', error: '', proxima: 0, caras: null, carasId: null, clave: '', foto: null });
+    Object.assign(E, { id, plan: null, avisos: [], estado: 'pidiendo', error: '', proxima: 0, caras: null, carasId: null, clave: '', foto: null, desde: Date.now() });
   }
   /* El plan: se pregunta cada 6 s mientras el director trabaja. Con el plan llegan también las caras, si ya se guardaron. */
   function pedirPlan() {
@@ -143,13 +149,39 @@
   }
   function estilo(el, o) { for (const k in o) if (el.style[k] !== o[k]) el.style[k] = o[k]; }
 
+  /* El aviso del celular: qué está haciendo Cherry mientras la Cámara viva no está lista (Sergio, 29-oct: «no se entiende
+     qué está pasando»). Arriba, debajo de la etiqueta de la vista previa. */
+  function avisar(caja, texto) {
+    if (!texto || !caja) { if (E.aviso && E.aviso.style.display !== 'none') E.aviso.style.display = 'none'; return; }
+    if (!E.aviso) {
+      E.aviso = document.createElement('div');
+      E.aviso.className = 'cv-aviso'; E.aviso.setAttribute('role', 'status');
+      E.aviso.style.cssText = 'position:absolute;left:50%;top:54px;transform:translateX(-50%);z-index:30;max-width:86%;padding:7px 12px;' +
+        'border-radius:999px;background:rgba(14,10,12,.82);color:#fff;font:600 11px/1.3 system-ui,sans-serif;text-align:center;pointer-events:none;' +
+        'box-shadow:0 4px 14px rgba(0,0,0,.35)';
+    }
+    if (E.aviso.parentNode !== caja) caja.appendChild(E.aviso);
+    if (E.aviso.textContent !== texto) E.aviso.textContent = texto;
+    if (E.aviso.style.display === 'none') E.aviso.style.display = '';
+  }
+  const mmss = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  function textoAviso() {
+    if (E.error) return 'Cámara viva · ' + E.error;
+    if (!E.plan) {
+      const falta = TARDA_S - (Date.now() - E.desde) / 1000;
+      return 'Cámara viva · Cherry está armando tu edición · ' + (falta > 5 ? 'faltan ≈ ' + mmss(falta) : 'ya casi');
+    }
+    if (E.buscando) return 'Cámara viva · buscando tu cara para poner los títulos a tu lado · ' + Math.round(E.avance * 100) + ' %';
+    return '';
+  }
+
   /* Un cuadro: dónde va tu video (su cámara, el hueco o nada) y las láminas encima. true = el celular lo maneja la Cámara viva */
   function cuadro(ctx) {
     if (!ctx || !ctx.video || !C.api) { soltar(); return false; }
     const id = idDe(ctx);
     if (id !== E.id) nuevoVideo(id);
     pedirPlan();
-    if (!E.plan) { soltar(); return false; }          // mientras llega el plan: tu video tal cual
+    if (!E.plan) { soltar(); avisar(ctx.video.parentNode, textoAviso()); return false; }   // mientras llega el plan: tu video tal cual
     buscarCaras(ctx);
     fotoDe(ctx.video);
     if (!window.CherryCVVista) { cargarScript(VISTA_JS).catch((e) => console.warn('[Cámara viva] vista', e)); return false; }
@@ -181,10 +213,12 @@
     const callar = d !== 'camara';
     if (E.callado !== callar) { E.callado = callar; caja.classList.toggle('gr-callado', callar); }
     VISTA.dibujar(E.fondo, E.frente, { t, piezas: E.piezas, titulos: E.prep.titulos });
+    avisar(caja, textoAviso());
     return true;
   }
   /* Devolver el celular como estaba (otro estilo, otro video o mientras llega el plan) */
   function soltar() {
+    avisar(null, '');
     if (!E.tocados.length && !E.fondo) return;
     E.tocados.forEach((el) => { el.style.visibility = ''; el.style.clipPath = ''; el.style.transform = ''; el.style.transformOrigin = ''; });
     E.tocados = [];
@@ -198,14 +232,13 @@
   function estado() {
     if (!E.id) return { texto: 'La Cámara viva se arma cuando tu video está cortado.' };
     if (E.error) return { texto: E.error, error: true };
-    if (!E.plan) return { texto: 'Cherry está armando tu edición: cuándo hablas tú y cuándo va una lámina (como 1 minuto y medio).', cargando: true };
+    if (!E.plan) return { texto: 'Cherry está armando tu edición: cuándo hablas tú y cuándo va una lámina. Tarda como 1 minuto y medio; en el celular ves cuánto falta.', cargando: true };
     const ms = E.plan.momentos || [], lam = ms.filter((m) => m.tipo === 'lamina');
     const img = lam.filter((m) => m.objeto && m.objeto.tipo === 'imagen' && !m.objeto.img).length;
     return { texto: lam.length + ' láminas y ' + (ms.length - lam.length) + ' momentos en que hablas tú.' +
-      (img ? ' ' + img + (img === 1 ? ' lámina pide una imagen' : ' láminas piden una imagen') + ': mientras no la tengan, va tu video en el recuadro.' : '') +
-      (E.buscando ? ' Buscando tu cara para poner los títulos a tu lado (' + Math.round(E.avance * 100) + ' %).' : ''),
+      (img ? ' ' + img + (img === 1 ? ' lámina pide una imagen' : ' láminas piden una imagen') + ': mientras no la tengan, va tu video en el recuadro.' : ''),
       plan: E.plan };
   }
 
-  C.cvVivo = { disponible, activo, cuadro, soltar, estado };
+  C.cvVivo = { disponible, activo, cuadro, soltar, estado, FONDOS };
 })();
