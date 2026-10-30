@@ -243,10 +243,29 @@
     try { v = localStorage.getItem(CLAVE_ESTILO); } catch (_) { /* sin almacenamiento */ }
     return v || (E.ficha && E.ficha.imagenes && E.ficha.imagenes.estilo_defecto) || 'editorial';
   }
+  /* (30-oct) CTRL + Z. Sergio: «como normalmente funcionaría un programa de edición». Cada cambio le avisa al historial del Manual
+     (C.cvVivo.alCambiar) con lo que había antes: una imagen de una lámina o los ajustes. Deshacer vuelve a poner eso y el
+     archivo sigue ahí: nunca se borra, así que deshacer no cuesta créditos. */
+  const AJUSTES = ['grafOn', 'grafEstilo', 'grafFondoCV', 'cvEstiloImg'];
+  const fotoAjustes = () => { const o = {}; AJUSTES.forEach((k) => { o[k] = C.state[k]; }); return o; };
+  const fotoImagen = (i) => { const im = E.imagenes[i]; return im ? { key: im.key, estilo: im.estilo, origen: im.origen, desc: im.desc } : null; };
+  const anotar = (cambio) => { if (C.cvVivo.alCambiar) C.cvVivo.alCambiar(Object.assign({ fila: E.id }, cambio)); };
+  function cambiarAjustes(patch) { anotar({ ajustes: fotoAjustes() }); E.clave = ''; E.avisoImg = ''; C.setState(patch); }
+  /* Vuelve a como estaba `c` y devuelve cómo estaba justo antes (para rehacer). null = ya no se puede */
+  async function deshacer(c) {
+    if (c.ajustes) { const hoy = fotoAjustes(); E.clave = ''; C.setState(c.ajustes); return { fila: c.fila, ajustes: hoy }; }
+    if (c.fila !== E.id || E.trabajos[c.i]) return null;
+    const hoy = { fila: c.fila, i: c.i, imagen: fotoImagen(c.i) }, im = c.imagen;
+    const g = await C.api.edgeFetch('camara-viva', im ? { accion: 'guardar_imagen', render_id: E.id, momento: c.i, key: im.key, estilo: im.estilo, origen: im.origen, desc: im.desc }
+      : { accion: 'quitar_imagen', render_id: E.id, momento: c.i }, true, 30000);
+    if (!g || !g.imagenes) throw new Error((g && g.error) || 'no se pudo');
+    E.imagenes = g.imagenes; E.clave = ''; delete E.avisosImg[c.i];
+    C.render();
+    return hoy;
+  }
   function ponerEstiloImg(id) {
     if (id !== 'ref' && id !== 'sin') try { localStorage.setItem(CLAVE_ESTILO, id); } catch (_) { /* nada */ }
-    E.clave = ''; E.avisoImg = '';
-    C.setState({ cvEstiloImg: id });
+    cambiarAjustes({ cvEstiloImg: id });
   }
   /* Las láminas que pueden llevar imagen, en el orden del video (un gráfico no) */
   function laminasImg() {
@@ -319,9 +338,10 @@
     let r = await fetch(s.put, { method: 'PUT', headers: { 'Content-Type': tipo }, body: blob }).catch(() => null);
     if (!r || !r.ok) r = await fetch(s.put_r, { method: 'PUT', headers: { 'Content-Type': tipo }, body: blob }).catch(() => null);
     if (!r || !r.ok) throw new Error('no se pudo subir la imagen');
+    const antes = fotoImagen(i);
     const g = await C.api.edgeFetch('camara-viva', { accion: 'guardar_imagen', render_id: id, momento: i, key: s.key, estilo, origen, desc }, true, 30000);
     if (!g || !g.imagenes) throw new Error((g && g.error) || 'no se pudo guardar');
-    if (E.id === id) { E.imagenes = g.imagenes; E.clave = ''; }
+    if (E.id === id) { anotar({ i, imagen: antes }); E.imagenes = g.imagenes; E.clave = ''; }
   }
   async function crearUna(l) {
     const est = estiloImg(), id = E.id, i = l.i, desc = descDe(l);
@@ -390,9 +410,10 @@
   async function dejarVideo(l) {
     const id = E.id, i = l.i;
     E.trabajos[i] = { texto: 'Quitando…' }; C.render();
+    const antes = fotoImagen(i);
     try {
       const g = await C.api.edgeFetch('camara-viva', { accion: 'quitar_imagen', render_id: id, momento: i }, true, 30000);
-      if (g && g.imagenes && E.id === id) { E.imagenes = g.imagenes; E.clave = ''; }
+      if (g && g.imagenes && E.id === id) { anotar({ i, imagen: antes }); E.imagenes = g.imagenes; E.clave = ''; }
     } catch (e) { E.avisosImg[i] = 'No se pudo quitar. Inténtalo otra vez.'; }
     delete E.trabajos[i];
     C.render();
@@ -469,5 +490,5 @@
     return { texto: lam.length + ' láminas y ' + (ms.length - lam.length) + ' momentos en que hablas tú.', plan: E.plan };
   }
 
-  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, panelImagenes, firmaImagenes, recortarVerde };
+  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, panelImagenes, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
 })();

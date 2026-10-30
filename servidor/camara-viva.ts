@@ -6,6 +6,7 @@
 //       (1 crédito; si falla, se devuelve) y la devuelve en base64: la página la recorta y la sube
 //   { accion: 'subir_imagen', render_id, tipo } → dónde subir un archivo (uploads/<proyecto>/imagenes/, privada: se lee con enlace firmado)
 //   { accion: 'guardar_imagen', render_id, momento, key, estilo, origen, desc? } · { accion: 'quitar_imagen', render_id, momento }
+//   { accion: 'archivos_imagenes', render_id } → los archivos de imágenes del proyecto, del más nuevo al más viejo
 // Todo vive en renders.graficos = { v, estilo: 'camara_viva', rev, pendiente | plan, avisos?, uso?, caras?, imagenes? };
 // imagenes = { "<n.º de momento>": { key, estilo, origen: 'cherry' | 'tuya', desc?, en } }; la página recibe además su «url» firmada.
 // «rev» sube con cada escritura y solo se escribe si nadie escribió en el medio (la página y el director no se pisan).
@@ -187,12 +188,12 @@ async function crearImagen(fila: any, usuario: string, b: any): Promise<Record<s
 // ── La firma de get-upload-url: PUT por 1 h (por la dirección de subidas y, de respaldo, la de siempre) y GET por 7 días ──
 const codificar = (s: string) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
 const hex = (b: ArrayBuffer) => Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, '0')).join('')
-async function firmar(metodo: 'PUT' | 'GET', key: string, host: string, segundos: number): Promise<string> {
+async function firmar(metodo: 'PUT' | 'GET', key: string, host: string, segundos: number, extra: Record<string, string> = {}): Promise<string> {
   const enc = new TextEncoder(), ahora = new Date()
   const dia = ahora.toISOString().slice(0, 10).replace(/-/g, '')
   const dt = ahora.toISOString().replace(/[:\-]/g, '').replace(/\.\d+Z/, '') + 'Z'
   const scope = `${dia}/${AWS_REGION}/s3/aws4_request`
-  const q: Record<string, string> = { 'X-Amz-Algorithm': 'AWS4-HMAC-SHA256', 'X-Amz-Credential': `${AWS_KEY_ID}/${scope}`, 'X-Amz-Date': dt, 'X-Amz-Expires': String(segundos), 'X-Amz-SignedHeaders': 'host' }
+  const q: Record<string, string> = { 'X-Amz-Algorithm': 'AWS4-HMAC-SHA256', 'X-Amz-Credential': `${AWS_KEY_ID}/${scope}`, 'X-Amz-Date': dt, 'X-Amz-Expires': String(segundos), 'X-Amz-SignedHeaders': 'host', ...extra }
   const qs = Object.keys(q).sort().map((k) => `${codificar(k)}=${codificar(q[k])}`).join('&')
   const ruta = '/' + key.split('/').map(codificar).join('/')
   const toSign = `AWS4-HMAC-SHA256\n${dt}\n${scope}\n${hex(await crypto.subtle.digest('SHA-256', enc.encode(`${metodo}\n${ruta}\n${qs}\nhost:${host}\n\nhost\nUNSIGNED-PAYLOAD`)))}`
@@ -236,6 +237,16 @@ Deno.serve(async (req: Request) => {
       if (!ext) return responder({ error: 'Sube una imagen PNG, JPG o WEBP.' })
       const key = `uploads/${fila.project_id}/imagenes/${crypto.randomUUID()}.${ext}`
       return responder({ ok: true, key, put: await firmar('PUT', key, `${BUCKET}.s3.amazonaws.com`, 3600), put_r: await firmar('PUT', key, HOST_SIEMPRE, 3600) })
+    }
+    // (30-oct) los archivos de imágenes del proyecto (nunca se borran al cambiar una imagen), del más nuevo al más viejo
+    if (b.accion === 'archivos_imagenes') {
+      const r = await fetch(await firmar('GET', '', HOST_SIEMPRE, 300, { 'list-type': '2', prefix: `uploads/${fila.project_id}/imagenes/` }))
+      const x = await r.text()
+      if (!r.ok) return responder({ error: `Amazon ${r.status}: ${x.slice(0, 200)}` })
+      const lista = [...x.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)].map((m) => ({ key: (m[1].match(/<Key>(.*?)<\/Key>/) || [])[1], en: (m[1].match(/<LastModified>(.*?)</) || [])[1], bytes: Number((m[1].match(/<Size>(.*?)</) || [])[1]) }))
+        .sort((p, q) => String(q.en).localeCompare(String(p.en))).slice(0, 40)
+      for (const a of lista as any[]) a.url = await firmar('GET', a.key, HOST_SIEMPRE, 3600)
+      return responder({ ok: true, lista })
     }
     if (b.accion === 'guardar_imagen') {
       const key = String(b.key || '')

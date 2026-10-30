@@ -393,6 +393,15 @@
   function guardarHist(tipo) { HIST.push(foto(tipo)); if (HIST.length > 80) HIST.shift(); FUT.length = 0; }
   function volver(de, a) {
     const f = de.pop(); if (!f) return;
+    // (30-oct) lo de la Cámara viva: sus imágenes (se guardan en el servidor) y sus ajustes
+    if (f.tipo === 'cv') {
+      C.cvVivo.deshacer(f.v).then((hoy) => {
+        if (!hoy) { aviso('Eso ya no se puede deshacer'); return; }
+        a.push({ tipo: 'cv', v: hoy }); firmaP = ''; pintarPanel();
+        aviso(de === HIST ? 'Deshecho' : 'Rehecho');
+      }).catch(() => { de.push(f); aviso('No se pudo deshacer. Inténtalo otra vez.'); });
+      return;
+    }
     // (8-oct) con las tomas a mano cambia la base: lo de antes se pasa palabra por palabra o ya no se deshace
     if (f.tipo === 'subs' && f.fila !== C.cortesVivo.idBase()) { aviso('Eso ya no se puede deshacer: cambiaron las tomas'); return; }
     if (f.tipo === 'edicion') {
@@ -1979,6 +1988,7 @@
         h('b', null, o.nombre), h('small', null, coma(o.dur) + ' s'),
         h('button', { type: 'button', class: 'mn-ib mn-ib--chico', 'aria-label': 'Agregar en la línea blanca', title: 'Agregar en la línea blanca', onClick: () => agregarSonido(o.id, ahora()) }, ico('mas'))))));
   }
+  if (C.cvVivo) C.cvVivo.alCambiar = (cambio) => { HIST.push({ tipo: 'cv', v: cambio }); if (HIST.length > 80) HIST.shift(); FUT.length = 0; };
   /* (29-oct) LA CÁMARA VIVA (cvvivo.js): en qué va el plan y el fondo de las láminas. Mientras Sergio la prueba solo la ven
      los administradores, que también pueden volver a los de antes. */
   function libCamaraViva(tarjeta) {
@@ -1989,10 +1999,10 @@
       tarjeta('Cámara viva', e.texto, e.cargando ? h('span', { class: 'mn-val' }, h('span', { class: 'spinner' }), ' Armando…') : null),
       CVV.panelImagenes(),
       h('div', { class: 'mn-campo' }, h('span', null, 'Fondo de las láminas'),
-        h('div', { class: 'mn-chips' }, CVV.FONDOS.map((f) => chip([punto(f.hex), f.name], fondo === f.id, () => { C.setState({ grafFondoCV: f.id || null }); firmaP = ''; pintarPanel(); })))),
+        h('div', { class: 'mn-chips' }, CVV.FONDOS.map((f) => chip([punto(f.hex), f.name], fondo === f.id, () => { CVV.cambiarAjustes({ grafFondoCV: f.id || null }); firmaP = ''; pintarPanel(); })))),
       h('div', { class: 'mn-chips' },
-        accion(null, 'Quitar la Cámara viva', () => { C.setState({ grafOn: false }); aviso('Cámara viva quitada'); }, 'mn-ac--chico'),
-        accion(null, 'Usar los de antes (vidrio)', () => { C.setState({ grafEstilo: 'clasico' }); aviso('Gráficos de vidrio'); }, 'mn-ac--chico')));
+        accion(null, 'Quitar la Cámara viva', () => { CVV.cambiarAjustes({ grafOn: false }); aviso('Cámara viva quitada'); }, 'mn-ac--chico'),
+        accion(null, 'Usar los de antes (vidrio)', () => { CVV.cambiarAjustes({ grafEstilo: 'clasico' }); aviso('Gráficos de vidrio'); }, 'mn-ac--chico')));
   }
   function libGraficos() {
     const s = C.state, gen = U.regen && U.regen.id === '*';
@@ -2006,7 +2016,7 @@
     if (conCV) return h('div', { style: { display: 'grid', gap: '12px', maxWidth: '560px' } },
       tarjeta('Cámara viva', 'La cámara se acerca a ti y tu título entra al lado de tu cara; entre frase y frase, láminas con un objeto y dos líneas de texto.',
         accion('mas', s.grafOn ? 'Cambiar a la Cámara viva' : 'Poner la Cámara viva',
-          () => { C.setState({ grafOn: true, grafEstilo: 'camara_viva' }); aviso('Cámara viva puesta: Cherry está armando tu edición'); }, 'mn-ac--prim')),
+          () => { C.cvVivo.cambiarAjustes({ grafOn: true, grafEstilo: 'camara_viva' }); aviso('Cámara viva puesta: Cherry está armando tu edición'); }, 'mn-ac--prim')),
       s.grafOn
         ? h('p', { class: 'mn-nota' }, gen ? [h('span', { class: 'spinner' }), ' Buscando gráficos de vidrio…'] : 'Ahora este video lleva los gráficos de vidrio.')
         : h('div', { class: 'mn-chips' }, accion(null, 'Usar los de antes (vidrio)', () => { C.setState({ grafOn: true, grafEstilo: 'clasico' }); aviso('Gráficos puestos'); }, 'mn-ac--chico')));

@@ -113,7 +113,8 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
      Archivos en `uploads/<proyecto>/imagenes/` (privada, enlace firmado de 7 días; la limpieza no la toca y se borra con el
      proyecto); `renders.graficos.imagenes[n.º de momento]`. ⚠️ `ediciones/` NO sirve: `carrete-servidor` no puede escribir ahí
      (30-oct, 403: la primera prueba de Sergio falló así). Si se creó y no se guardó, el reintento no paga otra vez (`sinSubir`).
-     Prueba sin gastar: `_prueba-cvimg.html` + `scratchpad/familias/foto_panel.py`. Falta subir un CLIP propio a una lámina.
+     Ctrl + Z (Manual): `C.cvVivo.alCambiar` anota cada cambio en HIST (imagen de una lámina o ajustes) y `deshacer` lo vuelve a
+     poner; los archivos no se borran, así que no cuesta. Prueba sin gastar: `_prueba-cvimg.html` + `scratchpad/familias/foto_panel.py`. Falta subir un CLIP propio a una lámina.
    Falta (entrega 4): el video final en el ensamblador (formas `encima` y `tarjeta`).
 5. Las imágenes: pantalla «Las imágenes de tu video», subir y acomodar, crear con Nano Banana con créditos, biblioteca.
    ⭐ **El estilo de las imágenes se escoge en CADA video** (Sergio, 29-oct: nunca «una vez por marca»): viene marcado el último
