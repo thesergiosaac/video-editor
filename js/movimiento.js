@@ -132,8 +132,30 @@
     return plan;
   }
 
+  /* ══ (29-oct) LA CÁMARA VIVA ══ un solo pedazo { e: 'viva', tr } con los encuadres que arma camara-viva.js › tramos
+     (cada uno: { t, d, n, z0, x0, y0, z1, x1, y1 }, en px del cuadro de 1080 × 1920, con el CENTRO como eje). Mismo cálculo
+     que camara-viva.js › encuadre; aquí se pasa a escala y corrimiento alrededor del ANCLA para css() y para ffmpeg. */
+  var TOPE_VIVA = 1.7, DERIVA_VIVA = 0.024;
+  function vivo(tr, dura) { return tr && tr.length ? [{ t0: 0, t1: Math.max(dura || 0, 1e4), e: 'viva', tr: tr }] : []; }
+  function sVivo(x, n) { return x < 0.5 ? Math.pow(2, n - 1) * Math.pow(x, n) : 1 - Math.pow(-2 * x + 2, n) / 2; }
+  function estadoVivo(tr, t) {
+    var z = 1, x = 0, y = 0;
+    if (tr && tr.length && t >= tr[0].t) {
+      var i = 0;
+      while (i < tr.length - 1 && t >= tr[i + 1].t) i++;
+      var r = tr[i], u = (t - r.t) / r.d;
+      if (u < 1) { var k = sVivo(Math.max(0, u), r.n); z = r.z0 + (r.z1 - r.z0) * k; x = r.x0 + (r.x1 - r.x0) * k; y = r.y0 + (r.y1 - r.y0) * k; }
+      else { var dd = t - r.t - r.d; z = r.z1 + DERIVA_VIVA * dd * Math.min(1, Math.max(0, dd / 0.6)); x = r.x1; y = r.y1; }
+    }
+    z = Math.max(1, Math.min(TOPE_VIVA, z));
+    x = Math.max(-(z - 1) * 540, Math.min((z - 1) * 540, x)); y = Math.max(-(z - 1) * 960, Math.min((z - 1) * 960, y));
+    // escalar alrededor del centro = escalar alrededor del ANCLA y correr (1 − z)·(centro − ANCLA)
+    return { s: z, dx: x / 1080, dy: ((1 - z) * (0.5 - ANCLA.y) * 1920 + y) / 1920, r: 0 };
+  }
+
   /* ── Cómo está la cámara en el instante t dentro de un pedazo: escala, corrimiento (fracción del ancho/alto) y giro ── */
   function estado(p, t, curva) {
+    if (p.e === 'viva') return estadoVivo(p.tr, t);
     var f = CURVAS[curva] || CURVAS.suave, k = p.k || 1;
     var d = Math.max(1e-3, p.t1 - p.t0), tt = Math.max(0, t - p.t0), u = Math.min(1, tt / d);
     var s = 1, dx = 0, dy = 0, r = 0, b = p.b || 1;
@@ -179,7 +201,27 @@
      medido 19-sep: sin el -1 todo iba un cuadro adelantado). Por cada esquina de la pantalla se calcula de qué punto del
      cuadro original sale (lo inverso de escalar, girar y correr alrededor del ANCLA). */
   function num(x) { return (Math.round(x * 1e6) / 1e6).toString(); }
-  function ramaFF(p, curva) {
+  /* la cámara viva para ffmpeg: una rama por encuadre (ffmpeg solo evalúa la que toca); 8 = z, 9 = x, 6 = y, 7 = curva */
+  function ramaVivaFF(tr, desde, hasta) {
+    var T = 'ld(5)', i0 = 0;
+    for (var i = 0; i < tr.length; i++) if (tr[i].t <= desde) i0 = i;
+    var usar = tr.slice(i0).filter(function (r, j) { return j === 0 || r.t <= hasta; });
+    var rama = function (r) {
+      var u = '((' + T + '-' + num(r.t) + ')/' + num(r.d) + ')', uc = 'clip(' + u + ',0,1)', n = num(r.n), dd = '(' + T + '-' + num(r.t + r.d) + ')';
+      var S = 'if(lt(' + uc + ',0.5),pow(2,' + n + '-1)*pow(' + uc + ',' + n + '),1-pow(-2*' + uc + '+2,' + n + ')/2)';
+      return 'if(lt(' + u + ',1),st(7,' + S + ');st(8,' + num(r.z0) + '+' + num(r.z1 - r.z0) + '*ld(7));st(9,' + num(r.x0) + '+' + num(r.x1 - r.x0) +
+        '*ld(7));st(6,' + num(r.y0) + '+' + num(r.y1 - r.y0) + '*ld(7)),st(8,' + num(r.z1) + '+' + num(DERIVA_VIVA) + '*' + dd + '*clip(' + dd +
+        '/0.6,0,1));st(9,' + num(r.x1) + ');st(6,' + num(r.y1) + '))';
+    };
+    var cadena = rama(usar[usar.length - 1]);
+    for (var j = usar.length - 2; j >= 0; j--) cadena = 'if(lt(' + T + ',' + num(usar[j + 1].t) + '),' + rama(usar[j]) + ',' + cadena + ')';
+    if (i0 === 0) cadena = 'if(lt(' + T + ',' + num(usar[0].t) + '),st(8,1);st(9,0);st(6,0),' + cadena + ')';
+    var Y = num((0.5 - ANCLA.y) * 1920);
+    return cadena + ';st(8,clip(ld(8),1,' + num(TOPE_VIVA) + '));st(9,clip(ld(9),-(ld(8)-1)*540,(ld(8)-1)*540));' +
+      'st(6,clip(ld(6),-(ld(8)-1)*960,(ld(8)-1)*960));st(4,0);st(0,ld(8));st(1,ld(9)/1080);st(2,((1-ld(8))*' + Y + '+ld(6))/1920);st(3,0)';
+  }
+  function ramaFF(p, curva, desde, hasta) {
+    if (p.e === 'viva') return ramaVivaFF(p.tr, desde, hasta);
     var k = p.k || 1, b = p.b || 1, d = Math.max(1e-3, p.t1 - p.t0), T = 'ld(5)', tt = '(' + T + '-' + num(p.t0) + ')';
     var u = 'clip(' + tt + '/' + num(d) + ',0,1)';
     var s = '1', dx = '0', dy = '0', r = '0';
@@ -214,8 +256,8 @@
     var usar = plan.filter(function (p) { return p.t1 >= desde && p.t0 <= hasta; });
     if (!usar.length) return null;
     // cadena de si-entonces por pedazo (ffmpeg solo evalúa la rama que toca)
-    var cadena = ramaFF(usar[usar.length - 1], curva);
-    for (var i = usar.length - 2; i >= 0; i--) cadena = 'if(lt(ld(5),' + num(usar[i].t1) + '),' + ramaFF(usar[i], curva) + ',' + cadena + ')';
+    var cadena = ramaFF(usar[usar.length - 1], curva, desde, hasta);
+    for (var i = usar.length - 2; i >= 0; i--) cadena = 'if(lt(ld(5),' + num(usar[i].t1) + '),' + ramaFF(usar[i], curva, desde, hasta) + ',' + cadena + ')';
     var pre = 'st(5,(in-1+' + c0 + ')/' + num(fps) + ');' + cadena + ';';
     var AX = '(W*' + ANCLA.x + ')', AY = '(H*' + ANCLA.y + ')';
     function esquina(px, py, eje) {
@@ -238,6 +280,7 @@
   function quieto(plan, ventanas) {
     if (!plan || !plan.length || !ventanas || !ventanas.length) return plan;
     return plan.map(function (p) {
+      if (p.e === 'viva') return p;
       var toca = ventanas.some(function (v) { return p.t0 < v.t1 && p.t1 > v.t0; });
       return toca ? { t0: p.t0, t1: p.t1, e: 'nada', k: p.k, b: 1 } : p;
     });
@@ -254,6 +297,7 @@
     EFECTOS: EFECTOS, NOMBRES: NOMBRES, CURVAS: CURVAS, INTENSIDAD: INTENSIDAD, ANCLA: ANCLA, MAX: MAX,
     limpiar: limpiar, piezasDe: piezasDe, reloj: reloj, impactosDe: impactosDe,
     dirigir: dirigir, quieto: quieto, estado: estado, valor: valor, piezaEn: piezaEn, css: css, ffmpeg: ffmpeg, resumen: resumen,
+    vivo: vivo, TOPE_VIVA: TOPE_VIVA,
   };
   if (typeof module === 'object' && module.exports) module.exports = API;
   else raiz.CherryMov = API;

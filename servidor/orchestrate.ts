@@ -358,8 +358,34 @@ async function apoyoDe(words: any[]): Promise<Record<string, unknown> | null> {
   finally { clearTimeout(reloj) }
 }
 
+/* (29-oct) LA CÁMARA VIVA: el primer estilo de gráficos que arma un DIRECTOR (servidor/director.ts) con un plan de momentos
+   (tú hablando / láminas). Su plan, las caras y las imágenes viven en renders.graficos = { v, estilo: 'camara_viva', rev,
+   pendiente | plan, caras?, imagenes? }; lo escribe la función camara-viva (rev = para no pisarse). Lo de vidrio y persiana
+   no se mezcla con esto. */
+const esCamaraViva = (g: any) => !!g && typeof g === 'object' && g.estilo === 'camara_viva'
+async function pedirPlanCV(renderId: string, words: any[]): Promise<void> {
+  const palabras = (Array.isArray(words) ? words : []).map((w: any) => ({ word: w.word, start: w.start, end: w.end }))
+  let g: Record<string, unknown> = { v: MOTOR_GRAFICOS, estilo: 'camara_viva', rev: 1, pedido: new Date().toISOString() }
+  try {
+    const r = await fetch(`${SESION_URL}/functions/v1/director`, {
+      method: 'POST', headers: { Authorization: `Bearer ${SESION_SRV}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'plan', estilo: 'camara_viva', palabras }),
+    })
+    const d: any = await r.json().catch(() => null)
+    if (d && d.pendiente) g = { ...g, pendiente: String(d.pendiente) }
+    else g = { ...g, error: String(d?.error || `director ${r.status}`).slice(0, 300) }
+  } catch (e) { g = { ...g, error: String(e).slice(0, 300) } }
+  console.log(`[cv] plan pedido para ${renderId}: ${g.pendiente ? 'pendiente ' + g.pendiente : 'ERROR ' + g.error}`)
+  await db(`/renders?id=eq.${renderId}`, 'PATCH', { graficos: g }).catch(() => null)
+}
+
 /* Gráficos (v196): cuántos y de qué color. Sin cantidad = apagados. */
 function limpiarGraficos(g: any): Record<string, unknown> | null {
+  if (esCamaraViva(g)) {   // (29-oct) Cámara viva: el color del fondo de las láminas (o el de la ficha) y el estilo de las imágenes
+    const f = String(g.fondo_cv || ''), e = String(g.estilo_imagenes || '')
+    return { cantidad: 'medio', estilo: 'camara_viva', ...(/^#[0-9a-fA-F]{6}$/.test(f) ? { fondo_cv: f } : {}),
+             ...(/^[a-z0-9_]{2,24}$/.test(e) ? { estilo_imagenes: e } : {}) }
+  }
   if (!g || typeof g !== 'object' || !['pocos', 'medio', 'muchos'].includes(String(g.cantidad))) return null
   const c = String(g.color || 'cherry')
   return { cantidad: String(g.cantidad), color: /^#[0-9a-fA-F]{6}$/.test(c) || /^[a-z]{3,12}$/.test(c) ? c : 'cherry',
@@ -411,7 +437,9 @@ async function graficosDe(words: any[], familias?: string[]): Promise<Record<str
    que la persona escogió y aún no están marcadas (lo de las demás se queda: puede volver a ellas sin gastar otra vez).
    null = no hay nada que cambiar. */
 async function graficosAlDia(g: any, words: any[], cfg: any): Promise<Record<string, unknown> | null> {
+  if (esCamaraViva(cfg)) return null   // (29-oct) la Cámara viva lleva su plan: nada de vidrio encima
   const quiere = familiasGraf(cfg?.familias)
+  if (esCamaraViva(g)) return await graficosDe(words, quiere)   // salió de la Cámara viva: se marcan los de su familia
   if (graficosViejos(g)) return await graficosDe(words, quiere)
   const tiene = familiasGraf(g.familias)
   const faltan = quiere.filter((f) => !tiene.includes(f))
@@ -2512,7 +2540,9 @@ Deno.serve(async (req: Request) => {
               const cada = IMPACTO_CADA.medio
               // v195: las escenas de apoyo se buscan a la vez que las frases (la vista previa las muestra apenas se enciendan)
               // v196: los gráficos por su lado (no demoran las frases de la base)
-              EdgeRuntime.waitUntil(graficosDe(activeWords).then((gr) => (gr ? db(`/renders?id=eq.${render_id}`, 'PATCH', { graficos: gr }).catch(() => null) : null)))
+              // (29-oct) Cámara viva: en vez de marcar los de vidrio, el director arma su plan (≈ 90 s, en segundo plano)
+              if (esCamaraViva(graficos)) EdgeRuntime.waitUntil(pedirPlanCV(render_id, activeWords))
+              else EdgeRuntime.waitUntil(graficosDe(activeWords).then((gr) => (gr ? db(`/renders?id=eq.${render_id}`, 'PATCH', { graficos: gr }).catch(() => null) : null)))
               // v259: los titulares de «pocas» y «muchas» a la vez que las frases (la vista previa cambia de nivel al instante)
               const [ia, ap, tPocas, tMuchas] = await Promise.all([frasesConIA(activeWords, cada), apoyoDe(activeWords),
                 titularesConIA(activeWords, NIVEL_CADA.pocas), titularesConIA(activeWords, NIVEL_CADA.muchas)])
@@ -2588,7 +2618,7 @@ Deno.serve(async (req: Request) => {
         const guardarApoyo = apoyoP.then((ap) => (ap ? db(`/renders?id=eq.${render_id}`, 'PATCH', { apoyo: ap }).catch(() => null) : null))
         if (!escCfg) EdgeRuntime.waitUntil(guardarApoyo)
         // v196: los gráficos también (con gráficos encendidos, quedan guardados antes de F2)
-        const graficosP = activeWords.length ? graficosDe(activeWords, (grafCfg?.familias as string[] | undefined) ?? ['vidrio']) : Promise.resolve(null)
+        const graficosP = activeWords.length && !esCamaraViva(grafCfg) ? graficosDe(activeWords, (grafCfg?.familias as string[] | undefined) ?? ['vidrio']) : Promise.resolve(null)
         const guardarGraficos = graficosP.then((gr) => (gr ? db(`/renders?id=eq.${render_id}`, 'PATCH', { graficos: gr }).catch(() => null) : null))
         if (!grafCfg) EdgeRuntime.waitUntil(guardarGraficos)
 

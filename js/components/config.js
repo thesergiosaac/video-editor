@@ -504,8 +504,45 @@
       onClick: para(() => ponerMaterial(p)) }, 'Poner foto o clip');
   }
 
+  /* (29-oct) LA CÁMARA VIVA: el estilo con el que sale Cherry (cvvivo.js la muestra en el celular). Mientras Sergio la prueba
+     en el editor, solo los administradores la ven y pueden volver a los de antes; al lanzar queda sola. */
+  const ESTILOS_CV = [{ id: 'camara_viva', name: 'Cámara viva' }, { id: 'antes', name: 'Vidrio y persiana' }];
+  const FONDOS_CV = [
+    { id: '', name: 'Crema', hex: '#ECE4D6' }, { id: '#f4f2ee', name: 'Blanco', hex: '#F4F2EE' },
+    { id: '#d9d4cc', name: 'Piedra', hex: '#D9D4CC' }, { id: '#1c1b1e', name: 'Noche', hex: '#1C1B1E' },
+  ];
+  function elegirCV(s) {
+    return C.frag(
+      ui.label('Estilo (en prueba: solo lo ven los administradores)'),
+      ui.chips(ESTILOS_CV, s.grafEstilo === 'camara_viva' ? 'camara_viva' : 'antes',
+        (id) => C.setState({ grafEstilo: id === 'camara_viva' ? 'camara_viva' : 'clasico' }), { marginBottom: '16px' }));
+  }
+  function seccionCamaraViva(s) {
+    const e = C.cvVivo.estado(), fondo = s.grafFondoCV || '';
+    const aMano = !!fondo && !FONDOS_CV.some((f) => f.id === fondo);
+    return C.frag(
+      ui.switchRow('Gráficos', 'La Cámara viva: la cámara se acerca a ti y te corre a un lado mientras tu título entra al lado de tu cara. Entre frase y frase, láminas simples: un fondo con la sombra de una persiana, un objeto (una imagen, tu video en un recuadro o un gráfico) y dos líneas de texto.',
+        !!s.grafOn, () => C.setState({ grafOn: !s.grafOn }), { marginBottom: '16px' }),
+      s.grafOn && C.frag(
+        C.cvVivo.disponible() ? elegirCV(s) : null,
+        h('div', { class: 'row__desc', style: { marginBottom: '16px', color: e.error ? 'var(--danger, #e5484d)' : '' } },
+          e.cargando ? h('span', { class: 'spinner' }) : null, e.cargando ? ' ' : '', e.texto),
+        ui.label('Fondo de las láminas'),
+        h('div', { class: 'gr-colores', role: 'group', 'aria-label': 'Fondo de las láminas' }, FONDOS_CV.map((f) => h('button', {
+          type: 'button', class: 'gr-color' + (fondo === f.id ? ' on' : ''), 'aria-pressed': String(fondo === f.id), title: f.name,
+          onClick: () => C.setState({ grafFondoCV: f.id || null }),
+        }, h('i', { style: { background: f.hex } }), f.name)).concat([
+          h('label', { class: 'gr-color pan-color__otro' + (aMano ? ' on' : ''), title: 'Escoge cualquier color' },
+            h('input', { type: 'color', value: aMano ? fondo : '#ece4d6',
+              onChange: (ev) => C.setState({ grafFondoCV: String(ev.target.value).toLowerCase() }) }), 'Otro'),
+        ])),
+        h('div', { class: 'row__desc', style: { margin: '8px 0 16px' } }, 'Con un fondo oscuro, las letras van en blanco.')));
+  }
+
   function seccionGraficos() {
     const s = C.state, GR = window.CherryGraf;
+    if (C.cvVivo && C.cvVivo.activo()) return seccionCamaraViva(s);
+    const conCV = !!(C.cvVivo && C.cvVivo.disponible());
     if (!GR) return h('div', { class: 'row__desc' }, 'Los gráficos no cargaron. Recarga la página.');
     const lista = C.grafVivo ? C.grafVivo.lista() : null;
     const cant = CANT_GRAF.find((c) => c.id === (s.grafCantidad || 'medio')) || CANT_GRAF[1];
@@ -526,6 +563,7 @@
       ui.switchRow('Gráficos', 'Cuando dices algo que se presta (una cifra, una lista, un antes y después, una palabra clave), Cherry pone un gráfico animado justo en ese momento. Tú escoges la familia.',
         !!s.grafOn, () => C.setState({ grafOn: !s.grafOn }), { marginBottom: '16px' }),
       s.grafOn && C.frag(
+        conCV ? elegirCV(s) : null,
         ui.label('Familia'),
         galeriaFamilias(s),
         h('div', { class: 'row__desc', style: { margin: '8px 0 16px' } },

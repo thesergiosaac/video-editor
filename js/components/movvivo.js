@@ -88,6 +88,14 @@
     const s = C.state;
     const ctx = contexto(s);
     ultimoCtx = ctx;
+    // (29-oct) la CÁMARA VIVA maneja el celular ella sola (cvvivo.js): su cámara, sus láminas y dónde va tu video
+    if (C.cvVivo && C.cvVivo.activo()) {
+      if (tocados.length) soltar();
+      apoyoCuadro(null); grafCuadro(null);
+      C.cvVivo.cuadro(ctx);
+      return;
+    }
+    if (C.cvVivo) C.cvVivo.soltar();
     apoyoCuadro(ctx);
     const antesGraf = grafCuadro(ctx);      // gráficos: capa encima + (en partida/completa) cuánto se encoge el video
     if (!ctx || !ctx.video) { if (tocados.length) soltar(); return; }

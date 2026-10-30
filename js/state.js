@@ -144,6 +144,8 @@
     /* (29-sep) familias de gráficos (se escogen como las plantillas de los subtítulos; dos = se mezclan) y el fondo
        de las tarjetas de «La persiana»: el color de la marca, blanco, papel o alternando */
     grafFamilias: ['vidrio'],
+    grafFondoCV: null,            // (29-oct) Cámara viva: el color del fondo de las láminas (null = el crema de la ficha)
+    cvEstiloImg: null,            // (29-oct) Cámara viva: el estilo de las imágenes de ESTE video (null = el último que usó)
     grafFondo: 'marca',
     grafVariantes: {},            // (29-sep) la pieza de la persiana escogida para cada gráfico de una palabra
     /* la pista «Zoom» del editor del resultado (todavía de muestra) los usa */
@@ -325,6 +327,9 @@
   /* Gráficos (19-sep): lo mismo — cuántos y de qué color; apagados = objeto vacío */
   C.grafCfg = function () {
     const s = C.state;
+    // (29-oct) la Cámara viva: su plan lo arma el director; aquí solo van el color de sus láminas y el estilo de sus imágenes
+    if (s.grafEstilo === 'camara_viva') return s.grafOn ? { cantidad: 'medio', estilo: 'camara_viva', color: s.grafColor || 'cherry',
+      ...(s.grafFondoCV ? { fondo_cv: s.grafFondoCV } : {}), ...(s.cvEstiloImg ? { estilo_imagenes: s.cvEstiloImg } : {}) } : {};
     const familias = (Array.isArray(s.grafFamilias) ? s.grafFamilias : []).filter((f) => f === 'vidrio' || f === 'persiana');
     return s.grafOn ? { cantidad: s.grafCantidad || 'medio', color: s.grafColor || 'cherry', estilo: s.grafEstilo === 'premium' ? 'premium' : 'clasico', detras: !!s.grafDetras, fijos: C.fijosDe('graficos'),
       familias: familias.length ? familias : ['vidrio'], fondo: ['marca', 'blanco', 'papel', 'alterna'].indexOf(s.grafFondo) >= 0 ? s.grafFondo : 'marca',
@@ -634,7 +639,9 @@
     patch.grafOn = !!(gf && gf.cantidad);
     if (gf && gf.cantidad) patch.grafCantidad = gf.cantidad;
     if (gf && gf.color) patch.grafColor = gf.color;
-    if (gf && gf.estilo) patch.grafEstilo = gf.estilo === 'premium' ? 'premium' : 'clasico';
+    if (gf && gf.estilo) patch.grafEstilo = gf.estilo === 'premium' ? 'premium' : gf.estilo === 'camara_viva' ? 'camara_viva' : 'clasico';
+    patch.grafFondoCV = gf && /^#[0-9a-fA-F]{6}$/.test(String(gf.fondo_cv || '')) ? gf.fondo_cv : null;   // (29-oct)
+    patch.cvEstiloImg = gf && gf.estilo_imagenes ? String(gf.estilo_imagenes) : null;
     if (gf) patch.grafFamilias = Array.isArray(gf.familias) && gf.familias.length ? gf.familias : ['vidrio'];   // (29-sep)
     if (gf && gf.fondo) patch.grafFondo = gf.fondo;
     patch.grafVariantes = gf && gf.variantes && typeof gf.variantes === 'object' ? gf.variantes : {};
