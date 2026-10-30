@@ -519,3 +519,5 @@ button.mn-tile{text-align:left}
 /* (30-oct) el selector del estilo de los títulos */
 .cvi-letra{padding-left:9px}
 .cvi-letra-aa{width:30px;flex:none;text-align:center;font-size:19px;line-height:1}
+/* (30-oct) en la pista Gráficos: las láminas, llenas; los títulos, suaves */
+.mn-cv-titulo{opacity:.62}

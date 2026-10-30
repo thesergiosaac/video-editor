@@ -508,6 +508,18 @@
       est === 'sin' ? null : h('p', { class: 'cvi-nota' }, '1 crédito por imagen creada (también «Otra versión»); si falla, no se cobra. Subir la tuya es gratis.'));
   }
 
+  /* (30-oct) Lo que va en la pista Gráficos de la línea de tiempo: las láminas y los títulos de cuando hablas, en segundos del plan */
+  function enLinea() {
+    return ((E.plan && E.plan.momentos) || []).map((m, i) => {
+      const lam = m.tipo === 'lamina', tx = lam ? (m.texto || {}) : (m.titulo || null);
+      if (!lam && !(tx && tx.gruesa)) return null;
+      const o = m.objeto || {}, im = lam && o.tipo !== 'grafico' && estiloImg() !== 'sin' ? E.imagenes[i] : null;
+      return { i, lamina: lam, t0: Number(m.t0), t1: Number(m.t1), desde: m.desde, hasta: m.hasta,
+        nombre: tx.gruesa || tx.chica || (lam ? 'Lámina' : 'Título'), texto: [tx.etiqueta, tx.chica, tx.gruesa, tx.remate].filter(Boolean).join(' · '),
+        objeto: !lam ? null : o.tipo === 'grafico' ? 'grafico' : im ? 'imagen' : 'video', grafico: o.grafico || null, img: im ? im.url : null, pide: o.es || null };
+    }).filter(Boolean);
+  }
+
   /* Para la pestaña Gráficos: en qué va el plan */
   function estado() {
     if (!E.id) return { texto: 'La Cámara viva se arma cuando tu video está cortado.' };
@@ -517,5 +529,5 @@
     return { texto: lam.length + ' láminas y ' + (ms.length - lam.length) + ' momentos en que hablas tú.', plan: E.plan };
   }
 
-  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, panelImagenes, panelEstiloTitulos, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
+  C.cvVivo = { disponible, activo, cuadro, soltar, estado, etiqueta, FONDOS, enLinea, panelImagenes, panelEstiloTitulos, firmaImagenes, recortarVerde, cambiarAjustes, deshacer, alCambiar: null };
 })();

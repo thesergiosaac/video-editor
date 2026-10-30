@@ -273,6 +273,8 @@
     // las pantallas (grabaciones de pantalla del Guion) se ven en el celular: también aquí, en Gráficos
     graficos = graficos.concat((m.pantallas || []).map((p) => enLista({ id: 'p' + p.pantalla, p, pantalla: true, b0: Number(p.t0), b1: Number(p.t1), mano: true })).filter(Boolean));
     if (ed) graficos = graficos.concat(ed.capas.map((c, n) => enLista({ id: 'c' + n, n, cap: c, capa: true, b0: Number(c.t0), b1: Number(c.t1), mano: true })).filter(Boolean));
+    // (30-oct) las láminas y los títulos de la Cámara viva (el plan va en segundos de las palabras: aR los pasa a los del video)
+    if (C.cvVivo && C.cvVivo.activo()) graficos = graficos.concat(C.cvVivo.enLinea().map((x) => enLista({ id: 'cv' + x.i, cv: x, b0: aR(x.t0), b1: aR(x.t1) })).filter(Boolean));
     const zE = (fij.escenas && fij.escenas.si) || [];
     const escenas = (m.escenas || []).map((x) => {
       let zona = null;
@@ -308,7 +310,7 @@
   const CON_LINEAS = { subtitulos: true, graficos: true, escenas: true, efectos: true };
   function claveLinea(p, it) {
     if (p === 'efectos') return it.id;
-    if (p === 'graficos') return it.capa ? null : it.pantalla ? 'p' + it.p.pantalla : 'g' + it.g.desde + '-' + it.g.tipo;
+    if (p === 'graficos') return it.capa || it.cv ? null : it.pantalla ? 'p' + it.p.pantalla : 'g' + it.g.desde + '-' + it.g.tipo;
     if (p === 'escenas') return 'e' + it.x.clip_id;
     return null;
   }
@@ -1201,7 +1203,7 @@
       guardarHist('estado'); U.sel = null;
       C.setState({ sonidos: sonidos().filter((x) => x.id !== it.id) }); aviso('SFX quitado');
     } else if (sel.pista === 'escenas') { U.sel = null; quitarEscena(it); }
-    else if (sel.pista === 'graficos') { if (it.capa) quitarCapa(it); else if (it.pantalla) quitarPantalla(it); else { U.sel = null; quitarGrafico(it); } }
+    else if (sel.pista === 'graficos') { if (it.cv) aviso('Por ahora los momentos de la Cámara viva no se quitan uno por uno'); else if (it.capa) quitarCapa(it); else if (it.pantalla) quitarPantalla(it); else { U.sel = null; quitarGrafico(it); } }
     else if (sel.pista === 'subtitulos') ponerEstilo(it, 'ninguno', X.impacto);
     else if (sel.pista === 'tomas' || sel.pista === 'voz') quitarToma(it);
   }
@@ -1255,6 +1257,7 @@
       listaDe(p).forEach((it) => {
         if ((it.fila || 0) !== f) return;
         if (p === 'subtitulos') o += bloque(p, it, esc(it.texto), (it.off ? 'mn-off' : '') + (it.imp ? ' mn-imp' : ''));
+        else if (p === 'graficos' && it.cv) o += bloque(p, it, esc(it.cv.nombre), it.cv.lamina ? 'mn-cv-lamina' : 'mn-cv-titulo');
         else if (p === 'graficos' && it.capa) o += bloque(p, it, '✎ Edición a mano', 'mn-capa');
         else if (p === 'graficos' && it.pantalla) o += bloque(p, it, '▭ ' + esc(it.p.titulo || 'Pantalla'), 'mn-pant');
         else if (p === 'graficos') {
@@ -1422,7 +1425,7 @@
     if (p === 'tomas') modo = r.width > 24 && x < 8 ? 'izq' : r.width > 24 && x > r.width - 8 ? 'der' : it.c ? 'mover' : 'nada';
     if (p === 'efectos') modo = 'mover';
     if (p === 'escenas') modo = x > r.width - 8 && r.width > 18 ? 'der' : 'mover';
-    if (p === 'subtitulos' || (p === 'graficos' && !it.capa)) modo = 'linea';
+    if (p === 'subtitulos' || (p === 'graficos' && !it.capa && !it.cv)) modo = 'linea';
     U.arr = { modo, pista: p, id, it, x0: ev.clientX, y0: ev.clientY, movido: false, b, izq: b.style.left, ancho: b.style.width, destino: null };
     R.lienzo.setPointerCapture(ev.pointerId);
     if (!(U.sel && U.sel.pista === p && U.sel.id === id)) escoger(p, id);
@@ -1596,7 +1599,7 @@
     let modo = 'nada';
     if (p === 'tomas') modo = it.c ? 'mover' : 'nada';
     if (p === 'efectos' || p === 'escenas') modo = 'mover';
-    if (p === 'subtitulos' || (p === 'graficos' && !it.capa)) modo = 'linea';
+    if (p === 'subtitulos' || (p === 'graficos' && !it.capa && !it.cv)) modo = 'linea';
     if (modo === 'nada') return;
     try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
     if (!(U.sel && U.sel.pista === p && U.sel.id === id)) escoger(p, id, true);
@@ -1675,7 +1678,7 @@
     if (deToma && it.c && !it.encima) b.push(h('span', { class: 'mn-sep2' }), herrBtn('arriba', 'Encima', 'Ponerla encima del video, con su sonido', () => subirToma(it, lineaLibre(it.t0, it.t1), it.c0), true));
     if (deToma && it.encima) b.push(h('span', { class: 'mn-sep2' }), herrBtn('abajo', 'A la principal', 'Que vuelva entre las demás tomas', () => bajarEncima(it, it.t0), true));
     if (deEscena) b.push(h('span', { class: 'mn-sep2' }), herrBtn('otra', 'Otra toma', 'Cambiar la toma de esta escena', () => otraToma(it), true));
-    if (p === 'graficos' && !it.capa && !it.pantalla) b.push(h('span', { class: 'mn-sep2' }), herrBtn('otra', 'Otro gráfico', 'La IA vuelve a marcar este momento', () => otrosGraficos(it), !U.regen));
+    if (p === 'graficos' && !it.capa && !it.pantalla && !it.cv) b.push(h('span', { class: 'mn-sep2' }), herrBtn('otra', 'Otro gráfico', 'La IA vuelve a marcar este momento', () => otrosGraficos(it), !U.regen));
     R.herrAcc.replaceChildren(...b);
   }
 
@@ -1704,7 +1707,7 @@
       else if (p === 'voz') b.push(herramienta('volumen', 'Volumen', () => abrirHoja('escogido')));
       else if (p === 'subtitulos') b.push(herramienta('corregir', 'Corregir', () => abrirHoja('escogido')));
       else if (p === 'graficos') b.push(
-        it.capa || it.pantalla ? null : herramienta('otro', 'Otro', () => otrosGraficos(it)),
+        it.capa || it.pantalla || it.cv ? null : herramienta('otro', 'Otro', () => otrosGraficos(it)),
         herramienta('corregir', 'Editar', () => abrirHoja('escogido')));
       else if (p === 'escenas') b.push(
         herramienta('otro', 'Otra toma', () => otraToma(it)),
@@ -1834,6 +1837,19 @@
           !impacto && actual !== '' ? accion(null, 'A todas', () => estiloATodas(actual === '' ? null : actual), 'mn-ac--chico', { title: 'Este estilo en todas las frases' }) : null)));
   }
 
+  /* (30-oct) Un momento de la Cámara viva escogido en la línea de tiempo: qué es y qué dices ahí */
+  function panelCV(it) {
+    const x = it.cv, dice = textoDe(x.desde, x.hasta);
+    const obj = { grafico: 'Gráfico', imagen: 'Imagen', video: 'Tu video en el recuadro' }[x.objeto];
+    return h('div', null,
+      cabInsp('graficos', x.nombre, tiempoDe(it), false),
+      props(
+        prop('Es', h('span', { class: 'mn-val' }, x.lamina ? 'Lámina' : 'Título cuando hablas')),
+        x.texto ? prop('Texto', h('span', { class: 'mn-val' }, x.texto)) : null,
+        obj ? prop('Lleva', h('span', { class: 'mn-val' }, obj)) : null,
+        prop('Dices', h('span', { class: 'mn-val mn-val--cita', title: dice }, '«' + dice + '»'))),
+      x.img ? h('img', { src: x.img, alt: '', style: { display: 'block', maxWidth: '120px', maxHeight: '120px', marginTop: '10px', objectFit: 'contain' } }) : null);
+  }
   function panelGrafico(it) {
     const G = window.CherryGraf, g = it.g;
     const nombre = (G && G.NOMBRES && G.NOMBRES[g.tipo]) || g.tipo;
@@ -2067,7 +2083,7 @@
     try {
       if (!it) insp = panelVacio();
       else if (U.sel.pista === 'subtitulos') insp = panelFrase(it);
-      else if (U.sel.pista === 'graficos') insp = it.capa ? panelCapa(it) : it.pantalla ? panelPantalla(it) : panelGrafico(it);
+      else if (U.sel.pista === 'graficos') insp = it.cv ? panelCV(it) : it.capa ? panelCapa(it) : it.pantalla ? panelPantalla(it) : panelGrafico(it);
       else if (U.sel.pista === 'escenas') insp = panelEscena(it);
       else if (U.sel.pista === 'efectos') insp = panelEfecto(it);
       else insp = panelToma(it, U.sel.pista === 'voz');
