@@ -1124,7 +1124,14 @@
   C.api = { rest: apiFetch, edgeFetch, getDatosHerramienta, guardarDatosHerramienta, datosInicio, moverProyecto, renombrarProyecto, borrarProyecto, esDeMarca, regenerarGraficos, marcarFamilias, enlacesBiblioteca, getReceta, prepararBase, getBaseAdelantada, getVistaPorFirma, getUltimoMaster, leerBorrador, guardarBorrador, cobroYAdmin, titularesNiveles, prepararVoz, recortarBase, getTranscripciones, editarEdicion, guardarGraficos, login, logout, getResumenProyectos, esPrimerIngreso, crearClave, recordarProyecto, getPerfil, getProjects, createProject, uploadClip, uploadClipViaS3, quitarClips, subirAudioRapido, ordenClip, getClips, uploadAudio, getSignedUrl, saveScript, getScript, generateVideo, getPipelineStatus, getLatestRender, saveBrand, getBrand, saveClipOrder, getRenderData, reExportWithEdits, guardarEdicion, getPreferencias, guardarPreferencias, leerArranque, guardarArranque, leerPantallas, guardarPantallas, leerEdicion };
 
   /* Al abrir la página: si hay una sesión guardada y sigue viva, se entra directo */
+  /* (30-oct) ⚠️ Se espera a que estén TODOS los scripts de la página. api.js va de los primeros y quienes dependen de la sesión
+     (la lista de proyectos, el proyecto del editor…) se anotan en C.onApiReady desde scripts posteriores. Con los scripts fuera
+     de la memoria del navegador, la sesión contestaba antes de que terminaran de llegar: el aviso ya había pasado y nadie
+     pedía nada (Sergio: «Cargando tus proyectos…» y el editor en negro hasta recargar). */
+  const paginaLista = document.readyState === 'loading'
+    ? new Promise((ok) => document.addEventListener('DOMContentLoaded', ok, { once: true })) : Promise.resolve();
   (async function init() {
+    await paginaLista;
     let guardada = null;
     try { guardada = JSON.parse(localStorage.getItem(LLAVE_SESION) || 'null'); } catch (_) {}
     if (guardada && guardada.refresh) {
