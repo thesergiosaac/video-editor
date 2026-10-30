@@ -228,7 +228,8 @@
       els.forEach((el) => estilo(el, { visibility: '', clipPath: clip, transformOrigin: ox.toFixed(2) + 'px ' + oy.toFixed(2) + 'px', transform: tr }));
     }
     const callar = d !== 'camara';
-    if (E.callado !== callar) { E.callado = callar; caja.classList.toggle('gr-callado', callar); }
+    E.callado = callar;
+    if (caja.classList.contains('gr-callado') !== callar) caja.classList.toggle('gr-callado', callar);   // se revisa en cada cuadro: otra parte del celular puede quitarla
     /* (30-oct) el subtítulo no se mueve con la cámara, pero si el acercamiento baja tu cara hasta él, baja un poco (la línea va al
        72 % = 1382 px; hasta 110 px más, sin entrar en la zona que tapa Instagram) */
     const subs = caja.querySelector('.cvc-subs');
