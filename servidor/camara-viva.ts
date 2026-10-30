@@ -8,6 +8,8 @@
 //   { accion: 'guardar_imagen', render_id, momento, key, estilo, origen, desc? } · { accion: 'quitar_imagen', render_id, momento }
 //   { accion: 'editar_momento', render_id, momento, cambios } → corrige un momento del plan (texto, título, cámara o quitarlo);
 //       la primera vez guarda en m.orig lo que armó el director: de ahí salen los turnos de cámara (editar uno no mueve los demás)
+//   Una base que sale de un recorte (subtitle_config.mano) HEREDA el plan de la anterior: ver «heredarPlan».
+//   { accion: 'heredar', render_id, ver? } → lo mismo a mano, para un plan que nadie ha tocado (ver: solo cuenta, no escribe)
 // Todo vive en renders.graficos = { v, estilo: 'camara_viva', rev, pendiente | plan, avisos?, uso?, caras?, imagenes? };
 // imagenes = { "<n.º de momento>": { key, estilo, origen: 'cherry' | 'tuya', desc?, en } }; la página recibe además su «url» firmada.
 // «rev» sube con cada escritura y solo se escribe si nadie escribió en el medio (la página y el director no se pisan).
@@ -46,7 +48,7 @@ async function usuarioDeSesion(req: Request): Promise<string | null> {
 // La fila del video si es de un proyecto de la persona; null si no existe o es de otro.
 async function renderDelUsuario(renderId: unknown, userId: string): Promise<any | null> {
   if (typeof renderId !== 'string' || !ES_UUID.test(renderId)) return null
-  const r = await fetch(`${SESION_URL}/rest/v1/renders?id=eq.${renderId}&select=id,project_id,graficos,palabras:subtitle_phrases->palabras&limit=1`, { headers: hSrv() })
+  const r = await fetch(`${SESION_URL}/rest/v1/renders?id=eq.${renderId}&select=id,project_id,created_at,graficos,palabras:subtitle_phrases->palabras,mano:subtitle_config->mano&limit=1`, { headers: hSrv() })
   const filas = r.ok ? await r.json() : []
   const fila = Array.isArray(filas) ? filas[0] : null
   if (!fila || !ES_UUID.test(String(fila.project_id))) return null
@@ -84,10 +86,88 @@ async function director(cuerpo: Record<string, unknown>): Promise<any> {
   return d
 }
 
-// El plan: recoger el que dejó pedido orchestrate; pedirlo si no hay, si falló o si se perdió.
+/* ── HEREDAR ── (30-oct) Sergio recortó dos tomas y «desaparecieron» sus gráficos: cada recorte crea una base nueva y el plan estaba
+   amarrado a la anterior; se volvía a pagar al director y se perdían las imágenes y lo editado. Las palabras casi no cambian: se
+   alinean las dos listas y cada momento sigue con las palabras que le quedaron. El momento que se quedó sin palabras se va; las palabras
+   nuevas (una toma que se alargó) quedan contigo hablando. Las caras no se heredan: los tiempos cambiaron y la página las vuelve a buscar. */
+const normal = (w: unknown) => String(w ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\u00f1]/g, '')
+function alinear(a: string[], b: string[]): number[] | null {
+  const mapa = new Array(a.length).fill(-1)
+  let ini = 0, fa = a.length, fb = b.length
+  while (ini < fa && ini < fb && a[ini] === b[ini]) { mapa[ini] = ini; ini++ }
+  while (fa > ini && fb > ini && a[fa - 1] === b[fb - 1]) { fa--; fb--; mapa[fa] = fb }
+  const n = fa - ini, m = fb - ini
+  if (!n || !m) return mapa
+  if (n * m > 9000000) return null   // cambió casi todo: no es un recorte, mejor un plan nuevo
+  const t = new Uint16Array((n + 1) * (m + 1)), f = m + 1
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) {
+    t[i * f + j] = a[ini + i] === b[ini + j] ? t[(i + 1) * f + j + 1] + 1 : Math.max(t[(i + 1) * f + j], t[i * f + j + 1])
+  }
+  let i = 0, j = 0
+  while (i < n && j < m) {
+    if (a[ini + i] === b[ini + j]) { mapa[ini + i] = ini + j; i++; j++ }
+    else if (t[(i + 1) * f + j] >= t[i * f + j + 1]) i++
+    else j++
+  }
+  return mapa
+}
+function heredarMomentos(viejo: any, pa: any[], pb: any[]): { momentos: any[], imagenes: Record<string, unknown>, quitados: number, nuevos: number } | null {
+  const mapa = alinear(pa.map((w) => normal(w.word)), pb.map((w) => normal(w.word)))
+  if (!mapa) return null
+  const iguales = mapa.filter((x) => x >= 0).length
+  if (iguales < Math.max(5, 0.5 * Math.max(pa.length, pb.length))) return null   // cambió más de la mitad: no es un recorte
+  const salida: any[] = [], imagenes: Record<string, unknown> = {}
+  let prev = -1, quitados = 0, nuevos = 0
+  const tuyo = (a: number, b: number) => ({ tipo: 'hablando', desde: a, hasta: b, t0: pb[a].start, t1: pb[b].end, camara: 'suave' })
+  const hueco = (hasta: number) => {   // palabras nuevas: una o dos se quedan con el momento anterior; más, contigo hablando
+    if (hasta <= prev) return
+    const ult = salida[salida.length - 1]
+    if (ult && hasta - prev <= 2) { ult.hasta = hasta; ult.t1 = pb[hasta].end } else { salida.push(tuyo(prev + 1, hasta)); nuevos++ }
+    prev = hasta
+  }
+  ;(viejo.plan.momentos || []).forEach((m0: any, i: number) => {
+    const quedan: number[] = []
+    for (let k = m0.desde; k <= m0.hasta && k < mapa.length; k++) if (mapa[k] > prev) quedan.push(mapa[k])
+    if (!quedan.length) { quitados++; return }
+    hueco(quedan[0] - 1)
+    const m = { ...m0, desde: quedan[0], hasta: quedan[quedan.length - 1], t0: pb[quedan[0]].start, t1: pb[quedan[quedan.length - 1]].end }
+    if (Array.isArray(m0.zoom)) m.zoom = m0.zoom.map((z: number) => mapa[z]).filter((z: number) => z >= m.desde && z <= m.hasta)
+    if (viejo.imagenes && viejo.imagenes[String(i)]) imagenes[String(salida.length)] = viejo.imagenes[String(i)]
+    salida.push(m)
+    prev = m.hasta
+  })
+  hueco(pb.length - 1)
+  return salida.length ? { momentos: salida, imagenes, quitados, nuevos } : null
+}
+const conPalabra = (l: any[]) => l.filter((w) => String(w.word ?? '').trim())   // como el director: numera sin las vacías
+/* De dónde sale: el plan más reciente del proyecto (la «de» de la base puede ser más vieja que el último recorte) */
+async function heredarPlan(fila: any, escribir = true): Promise<any | null> {
+  if (!fila.mano) return null
+  const r = await fetch(`${SESION_URL}/rest/v1/renders?project_id=eq.${fila.project_id}&created_at=lt.${encodeURIComponent(fila.created_at)}&graficos->>estilo=eq.camara_viva&graficos->plan=not.is.null&select=id,graficos,palabras:subtitle_phrases->palabras&order=created_at.desc&limit=1`, { headers: hSrv() })
+  const fuentes = r.ok ? await r.json() : []
+  const f0 = Array.isArray(fuentes) ? fuentes[0] : null
+  if (!f0) return null
+  const pb = conPalabra(palabrasDe(fila))
+  if (pb.length < 5) return null
+  const h = heredarMomentos(f0.graficos, conPalabra(palabrasDe(f0)), pb)
+  if (!h) return null
+  const planNuevo = { ...f0.graficos.plan, momentos: h.momentos }
+  if (!escribir) return { de: f0.id, ...h, plan: planNuevo }
+  const quedo = await guardar(fila.id, (x) => {
+    const { pendiente: _p, error: _e, caras: _c, caras_version: _v, ...resto } = x
+    return { ...resto, plan: planNuevo, imagenes: h.imagenes, avisos: f0.graficos.avisos || [], uso: f0.graficos.uso || null, heredado_de: f0.id, listo: new Date().toISOString() }
+  })
+  console.log(`[cv] plan heredado ${fila.id} de ${f0.id}: ${h.momentos.length} momentos, ${h.quitados} quitados, ${h.nuevos} nuevos`)
+  return quedo
+}
+/* ── FIN HEREDAR ── */
+
+// El plan: el heredado si la base sale de un recorte; si no, recoger el que dejó pedido orchestrate, o pedirlo si no hay, falló o se perdió.
 async function plan(fila: any): Promise<Record<string, unknown>> {
   const g = fila.graficos && fila.graficos.estilo === 'camara_viva' ? fila.graficos : null
   if (g && g.plan) return { plan: g.plan, avisos: g.avisos || [], caras: g.caras || null, imagenes: await conEnlaces(g.imagenes) }
+  const her = await heredarPlan(fila).catch((e) => { console.warn('[cv] no se pudo heredar: ' + String(e).slice(0, 200)); return null })
+  if (her) return { plan: her.plan, avisos: her.avisos || [], caras: null, imagenes: await conEnlaces(her.imagenes) }
   const palabras = palabrasDe(fila)
   if (palabras.length < 5) return { pendiente: true, estado: 'sin_palabras' }   // la base aún no tiene sus palabras
   const perdido = g && g.pendiente && Date.now() - Date.parse(String(g.pedido || 0)) > ESPERA_MAX_MS
@@ -262,6 +342,17 @@ Deno.serve(async (req: Request) => {
     const fila = await renderDelUsuario(b.render_id, usuario)
     if (!fila) return responder({ error: 'No encuentro ese video' }, 404)
     if (b.accion === 'plan') return responder({ ok: true, ...(await plan(fila)) })
+    // A mano: solo sobre un plan que nadie ha tocado (sin editar y sin imágenes). Con «ver» solo cuenta lo que haría
+    if (b.accion === 'heredar') {
+      const g = fila.graficos && fila.graficos.estilo === 'camara_viva' ? fila.graficos : null
+      const tocado = g && g.plan && ((g.plan.momentos || []).some((m: any) => m.orig) || Object.keys(g.imagenes || {}).length > 0)
+      if (tocado) return responder({ error: 'Este plan ya tiene cambios: no se reemplaza.' })
+      const d = await heredarPlan(fila, false)
+      if (!d) return responder({ error: 'No hay de dónde heredar.' })
+      if (b.ver) return responder({ ok: true, de: d.de, quitados: d.quitados, nuevos: d.nuevos, momentos: d.momentos.length, editados: d.momentos.filter((m: any) => m.orig).length, imagenes: Object.keys(d.imagenes), resumen: d.momentos.map((m: any) => [m.tipo === 'lamina' ? (m.objeto?.grafico || m.objeto?.tipo) : 'tu', m.desde, m.hasta, m.t0, m.t1]) })
+      const q = await heredarPlan(fila)
+      return responder({ ok: true, plan: q.plan, avisos: q.avisos || [], caras: null, imagenes: await conEnlaces(q.imagenes) })
+    }
     if (b.accion === 'caras') {
       const caras = limpiarCaras(b.caras)
       if (!caras) return responder({ error: 'caras vacías o mal formadas' }, 400)

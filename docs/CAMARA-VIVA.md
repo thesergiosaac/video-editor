@@ -132,6 +132,9 @@ proyecto del taller (4.0.528) a `scratchpad/premium-build/node_modules/@remotion
    - **Lámina y lámina (30-oct):** referencia instagram.com/p/DZt2BtXPz8Q, seg. 2,50 (medida cuadro a cuadro). Dos láminas a menos de 0,6 s
      comparten fondo y la cámara viaja de una a la otra en 0,55 s (`camara-viva.js › piezas` → `m.paso`; `laminas.tsx › enPaso`), con texto y
      objeto juntos: hacia la derecha, y una de cada tres hacia abajo. Si las dos llevan tu video no se puede (es uno solo) y la segunda entra como siempre.
+   - **Recortes (30-oct):** recortar una toma crea una base nueva (`subtitle_config.mano`) y Sergio perdía todo a la vista («desaparecieron»). Esa base hereda
+     el plan más reciente del proyecto (`camara-viva.ts › heredarPlan`), alineando las palabras: lo editado y las imágenes siguen, sin volver a pagar al
+     director. El momento que se queda sin palabras se va; las palabras nuevas quedan contigo hablando. Las caras se vuelven a buscar en la página.
    - **Qué lleva cada lámina (30-oct):** en el panel: Tú hablando / Lámina y Imagen / Tu clip / Gráfico, con sus datos (`objetoLimpio` en `camara-viva.ts`).
    Falta (entrega 4): el video final en el ensamblador (formas `encima` y `tarjeta`).
 5. Las imágenes: pantalla «Las imágenes de tu video», subir y acomodar, crear con Nano Banana con créditos, biblioteca.
