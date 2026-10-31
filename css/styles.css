@@ -458,24 +458,20 @@ a.btn,a.chip{text-decoration:none;text-align:center;display:inline-flex;align-it
    El mismo mundo del inicio: fondo liso con un foco de luz y grano, la estatua de audífonos que INFLA SU CHICLE mientras
    carga, y la tarjeta de entrar con volumen y la estatua del editor asomándose. Noche o Papel según lo que escogió en el
    inicio (atributo data-cherry-modo en <html>, lo pone index.html antes de pintar). */
-.cl{--fondo:#0B0709;--tinta:#F4ECE7;--tinta-2:rgba(244,236,231,.6);--tinta-3:rgba(244,236,231,.38);--rosa:#FF2D8A;
-  --tarjeta-a:#1D171B;--tarjeta-b:#110D10;--borde:rgba(255,255,255,.075);--brillo:rgba(255,255,255,.09);
-  --foco:rgba(255,255,255,.06);--sombra:rgba(0,0,0,.85);--silueta:rgba(0,0,0,.65);--campo:rgba(255,255,255,.05);
-  --campo-borde:rgba(255,255,255,.1);--grano-op:.07;--puntos:rgba(255,255,255,.15);
+/* (30-oct) Los mismos colores claros del inicio (.ci): la entrada oscura era solo para la revisión de Meta */
+.cl{--fondo:#ECECE9;--tinta:#111;--tinta-2:#474747;--tinta-3:#5E5E5E;--rosa:#FF2D8A;
+  --tarjeta-a:#fff;--tarjeta-b:#fff;--borde:rgba(17,17,17,.08);--brillo:transparent;
+  --foco:transparent;--sombra:rgba(17,17,17,.3);--silueta:rgba(17,17,17,.22);--campo:#F4F4F2;
+  --campo-borde:#CFCFCB;--grano-op:.05;--puntos:rgba(17,17,17,.14);
   position:relative;z-index:10;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:40px 16px;overflow:hidden;
   background:radial-gradient(60% 55% at 50% 45%,var(--foco),transparent 70%),var(--fondo);color:var(--tinta);font-family:var(--f-ui)}
-:root[data-cherry-modo="papel"] .cl{--fondo:#ECE3DD;--tinta:#140C11;--tinta-2:rgba(20,12,17,.62);--tinta-3:rgba(20,12,17,.4);
-  --tarjeta-a:#FCF9F7;--tarjeta-b:#F2EAE5;--borde:rgba(20,12,17,.07);--brillo:rgba(255,255,255,.9);
-  --foco:rgba(255,255,255,.7);--sombra:rgba(60,30,45,.22);--silueta:rgba(40,20,30,.3);--campo:rgba(20,12,17,.04);
-  --campo-borde:rgba(20,12,17,.12);--grano-op:.05;--puntos:rgba(20,12,17,.14)}
 .cl::after{content:"";position:absolute;inset:0;pointer-events:none;background-size:180px;opacity:var(--grano-op);mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
 .cl :focus-visible{outline:2px solid var(--rosa);outline-offset:3px}
 .cl-marca{display:flex;align-items:center;gap:10px;color:var(--tinta)}
 .cl-logo{display:block;height:54px;width:auto}
 .cl-marca--grande .cl-logo{height:76px}
-.cl-logo--papel,:root[data-cherry-modo="papel"] .cl .cl-logo--noche{display:none}
-:root[data-cherry-modo="papel"] .cl .cl-logo--papel{display:block}
+.cl .cl-logo--noche{display:none}
 
 /* ── Cargando: la estatua infla su chicle ── */
 .cl-carga{position:relative;z-index:1;display:grid;justify-items:center;gap:26px;text-align:center}
@@ -531,9 +527,9 @@ a.btn,a.chip{text-decoration:none;text-align:center;display:inline-flex;align-it
   63%{opacity:.85;transform:scale(.8)}
   70%,100%{opacity:0;transform:scale(1.7)}}
 
-/* ── Entrar: tarjeta con volumen y la estatua del editor asomándose ── */
+/* ── Entrar: tarjeta con volumen sobre el mármol en partículas ── */
 .cl-entrar{position:relative;z-index:1;width:min(400px,100%);display:grid;justify-items:center}
-.cl-asoma{position:relative;z-index:0;height:215px;width:auto;max-width:100%;margin-bottom:-64px;object-fit:contain;filter:drop-shadow(0 18px 16px var(--silueta))}
+.cl--entrada{background:var(--fondo) url(../assets/inicio/entrar-marmol.webp) 62% center/cover no-repeat}
 .cl-tarjeta{position:relative;z-index:1;isolation:isolate;width:100%;padding:30px 28px 26px;border-radius:30px;border:1px solid var(--borde);
   background:radial-gradient(120% 80% at 80% 100%,var(--foco),transparent 60%),linear-gradient(180deg,var(--tarjeta-a),var(--tarjeta-b));
   box-shadow:inset 0 1px 0 var(--brillo),0 1px 0 rgba(0,0,0,.25),0 26px 50px -26px var(--sombra),0 60px 90px -60px var(--sombra)}
@@ -571,6 +567,32 @@ a.btn,a.chip{text-decoration:none;text-align:center;display:inline-flex;align-it
 .cl .login__legal{margin:14px 0 0;font-size:11.5px;line-height:1.45;text-align:center;color:var(--tinta-3)}
 .cl .login__legal a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .cl .login__link:disabled{opacity:.6;cursor:default;text-decoration:none}
+/* (30-oct) Entrar y Crear cuenta: la contraseña con su ojo, «¿La olvidaste?» junto a la etiqueta y el paso a la otra pantalla */
+.cl .login__fila{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.cl .login__olvido{background:none;border:0;padding:0;cursor:pointer;font-size:12.5px;color:var(--tinta-2);text-decoration:underline;text-underline-offset:3px}
+.cl .login__olvido:hover{color:var(--tinta)}
+.cl .login__conojo{position:relative;display:flex;flex-direction:column}
+.cl .login__conojo .login__input{padding-right:46px}
+.cl .login__ojo{position:absolute;top:0;right:4px;width:42px;height:46px;display:grid;place-items:center;background:none;border:0;cursor:pointer;color:var(--tinta-3)}
+.cl .login__ojo:hover{color:var(--tinta)}
+.cl .login__input::placeholder{color:var(--tinta-3)}
+.cl .login__cambio{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--campo-borde);text-align:center;font-size:13.5px;color:var(--tinta-2)}
+.cl .login__cambio button{background:none;border:0;padding:0;cursor:pointer;font:700 13.5px var(--f-display);color:var(--tinta);text-decoration:underline;text-underline-offset:3px}
+/* En pantallas bajitas (la de Sergio mide 728) todo cabe sin bajar: la estatua se encoge y los campos se aprietan */
+@media (min-width:700px) and (max-height:860px){
+  .cl-tarjeta{padding:20px 26px 16px;border-radius:26px}
+  .cl-tarjeta .cl-marca{margin-bottom:12px}
+  .cl-pie{display:none}
+  .cl .login__titulo{font-size:23px;margin-bottom:12px}
+  .cl .login__input{padding:11px 14px;margin-bottom:10px}
+  .cl .login__label{margin-bottom:5px}
+  .cl .login__google{padding:10px}
+  .cl .login__o{margin:9px 0}
+  .cl .login__btn{padding:12px}
+  .cl .login__legal{margin-top:9px;font-size:11px}
+  .cl .login__cambio{margin-top:9px;padding-top:9px}
+  .cl .login__ojo{height:42px}
+}
 .cl .login__caja{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:16px}
 .cl .login__caja i{height:50px;display:grid;place-items:center;font:800 21px var(--f-display);font-style:normal;font-variant-numeric:tabular-nums;color:var(--tinta);background:var(--campo);border:1px solid var(--campo-borde);border-radius:13px}
 .cl .login__codigo{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;cursor:text}

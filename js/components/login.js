@@ -1,13 +1,13 @@
-/* login.js — pantalla de entrada. (30-oct) Una sola puerta: con el correo, Cherry sabe qué sigue.
-   Tiene cuenta → contraseña (y «¿Olvidaste tu contraseña?») · no tiene → crearla y confirmar el correo con un código ·
-   la abrimos por dentro → crear su contraseña (primer ingreso) · entró con Google → Google. El registro está cerrado hasta el lanzamiento. */
+/* login.js — pantallas de entrada. (30-oct) Dos pantallas con todo a la vista: Entrar (correo y contraseña) y Crear cuenta (nombre, correo y contraseña).
+   Al entrar, Cherry revisa el correo: la abrimos por dentro → crear su contraseña (primer ingreso) · entró con Google → Google ·
+   sin cuenta → se lo dice. Crear cuenta confirma el correo con un código. El registro está cerrado hasta el lanzamiento. */
 (function () {
   const C = window.CARRETE;
   const { h } = C;
   const CANAL = 'https://whatsapp.com/channel/0029Vb8xw0WCRs1wSMOitV35';
 
   /* Estado local de la pantalla (no va en C.state para no mezclarlo con el editor) */
-  const L = { paso: 'correo', correo: '', clave: '', clave2: '', nombre: '', codigo: '', para: 'registro', error: '', cargando: false, espera: 0, google: false, googleVisto: false };
+  const L = { paso: 'entrar', correo: '', clave: '', clave2: '', nombre: '', codigo: '', para: 'registro', error: '', cargando: false, espera: 0, google: false, googleVisto: false };
 
   function set(patch) {
     Object.assign(L, patch);
@@ -19,7 +19,7 @@
   }
 
   function reiniciar() {
-    Object.assign(L, { paso: 'correo', clave: '', clave2: '', nombre: '', codigo: '', error: '', cargando: false, espera: 0 });
+    Object.assign(L, { paso: 'entrar', clave: '', clave2: '', nombre: '', codigo: '', error: '', cargando: false, espera: 0 });
   }
   /* Se reparte el tiempo para pedir otro código sin volver a pintar la pantalla (no se pierde lo escrito) */
   setInterval(() => {
@@ -29,11 +29,14 @@
     if (b) { b.textContent = L.espera > 0 ? 'Enviar otro código en 0:' + String(L.espera).padStart(2, '0') : 'Enviar otro código'; b.disabled = L.espera > 0; }
   }, 1000);
 
-  async function continuarCorreo(e) {
+  const correoValido = (c) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c);
+
+  async function entrar(e) {
     e.preventDefault();
     if (L.cargando) return;
     const correo = L.correo.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return set({ error: 'Escribe un correo válido.' });
+    if (!correoValido(correo)) return set({ error: 'Escribe un correo válido.' });
+    if (!L.clave) return set({ error: 'Escribe tu contraseña.' });
     C.auth.aviso = null;
     set({ correo, cargando: true, error: '' });
     let r = await C.api.entrada('estado', { correo });
@@ -45,17 +48,10 @@
     const base = { cargando: false, clave: '', clave2: '', codigo: '' };
     if (r.tipo === 'primera') return set({ ...base, paso: 'crear' });
     if (r.tipo === 'google') return set({ ...base, paso: 'google' });
-    if (r.tipo === 'clave') return set({ ...base, paso: 'clave' });
-    return set({ ...base, paso: r.cerrado ? 'cerrado' : 'nueva' });
-  }
-
-  async function entrar(e) {
-    e.preventDefault();
-    if (L.cargando) return;
-    if (!L.clave) return set({ error: 'Escribe tu contraseña.' });
-    set({ cargando: true, error: '' });
-    const r = await C.api.login(L.correo, L.clave);
-    if (!r.ok) return set({ cargando: false, clave: '', error: r.error });
+    if (r.tipo === 'sin_confirmar') return set({ ...base, paso: 'registro', error: 'Ese correo no terminó el registro. Complétalo aquí.' });
+    if (r.tipo !== 'clave') return set({ ...base, error: 'Ese correo aún no tiene cuenta. Créala abajo.' });
+    const d = await C.api.login(correo, L.clave);
+    if (!d.ok) return set({ cargando: false, clave: '', error: d.error });
     reiniciar(); // la app ya se pintó al entrar
   }
 
@@ -73,10 +69,12 @@
   async function registrar(e) {
     e.preventDefault();
     if (L.cargando) return;
+    const correo = L.correo.trim().toLowerCase();
     if (!L.nombre.trim()) return set({ error: 'Escribe tu nombre.' });
+    if (!correoValido(correo)) return set({ error: 'Escribe un correo válido.' });
     if (L.clave.length < 8) return set({ error: 'La contraseña debe tener al menos 8 caracteres.' });
-    set({ cargando: true, error: '' });
-    const r = await C.api.entrada('registrar', { correo: L.correo, clave: L.clave, nombre: L.nombre.trim() });
+    set({ correo, cargando: true, error: '' });
+    const r = await C.api.entrada('registrar', { correo, clave: L.clave, nombre: L.nombre.trim() });
     if (r.cerrado) return set({ cargando: false, paso: 'cerrado' });
     if (!r.ok) return set({ cargando: false, error: r.error || 'No se pudo crear la cuenta.' });
     set({ cargando: false, paso: 'codigo', para: 'registro', codigo: '', espera: r.espera || 45 });
@@ -90,14 +88,17 @@
     const r = await C.api.entrada('confirmar', { correo: L.correo, codigo: L.codigo });
     if (!r.ok) return set({ cargando: false, codigo: '', error: r.error || 'No se pudo confirmar.' });
     const d = await C.api.login(L.correo, L.clave);
-    if (!d.ok) return set({ cargando: false, paso: 'clave', clave: '', error: d.error });
+    if (!d.ok) return set({ cargando: false, paso: 'entrar', clave: '', error: d.error });
     reiniciar();
   }
 
-  async function pedirRecuperar() {
+  async function pedirRecuperar(e) {
+    if (e && e.preventDefault) e.preventDefault();
     if (L.cargando) return;
-    set({ cargando: true, error: '' });
-    const r = await C.api.entrada('recuperar', { correo: L.correo });
+    const correo = L.correo.trim().toLowerCase();
+    if (!correoValido(correo)) return set({ error: 'Escribe un correo válido.' });
+    set({ correo, cargando: true, error: '' });
+    const r = await C.api.entrada('recuperar', { correo });
     if (!r.ok) return set({ cargando: false, error: r.error || 'No se pudo enviar el código.' });
     set({ cargando: false, paso: 'recuperar', para: 'recuperar', codigo: '', clave: '', espera: r.espera || 45 });
   }
@@ -111,7 +112,7 @@
     const r = await C.api.entrada('cambiar_clave', { correo: L.correo, codigo: L.codigo, clave: L.clave });
     if (!r.ok) return set({ cargando: false, codigo: '', error: r.error || 'No se pudo cambiar la contraseña.' });
     const d = await C.api.login(L.correo, L.clave);
-    if (!d.ok) return set({ cargando: false, paso: 'clave', clave: '', error: d.error });
+    if (!d.ok) return set({ cargando: false, paso: 'entrar', clave: '', error: d.error });
     reiniciar();
   }
 
@@ -122,7 +123,8 @@
     set({ error: '', espera: r.espera || 45 });
   }
 
-  const otroCorreo = () => set({ paso: 'correo', clave: '', clave2: '', codigo: '', error: '' });
+  const irA = (paso) => set({ paso, clave: '', clave2: '', codigo: '', error: '' });
+  const otroCorreo = () => irA('entrar');
 
   function Marca(grande) {
     const k = grande ? 'g' : 'n';   // (4-oct) el logo nuevo; el de papel solo se ve si la entrada está en papel
@@ -139,14 +141,50 @@
     return h('button', { class: 'login__btn', type: 'submit', disabled: L.cargando }, texto);
   }
 
+  const OJO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.600-7 10-7 10 7 10 7-3.600 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const OJO_NO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.600 5.100A10.700 10.700 0 0 1 12 5c6.400 0 10 7 10 7a17 17 0 0 1-3.200 4M6.500 6.500A16.800 16.800 0 0 0 2 12s3.600 7 10 7a10.300 10.300 0 0 0 5.500-1.500"/><path d="M9.900 9.900a3 3 0 0 0 4.200 4.200"/></svg>';
+  /* Ver lo escrito: se cambia directo en la casilla, sin volver a pintar */
+  function verClave(ev) {
+    const b = ev.currentTarget, i = b.parentNode.querySelector('input');
+    const ver = i.type === 'password';
+    i.type = ver ? 'text' : 'password';
+    b.innerHTML = ver ? OJO_NO : OJO;
+    b.setAttribute('aria-label', ver ? 'Ocultar contraseña' : 'Ver contraseña');
+  }
+  function CajaClave(id, valor, auto, onInput, foco, pista) {
+    return h('div', { class: 'login__conojo' },
+      h('input', {
+        id, class: 'login__input', type: 'password', name: 'password', autocomplete: auto, value: valor, placeholder: pista || null,
+        'data-foco': foco ? '1' : null, onInput,
+      }),
+      h('button', { class: 'login__ojo', type: 'button', tabindex: '-1', 'aria-label': 'Ver contraseña', html: OJO, onClick: verClave }));
+  }
   function CampoClave(id, etiqueta, valor, auto, onInput, foco) {
     return [
       h('label', { class: 'login__label', for: id }, etiqueta),
+      CajaClave(id, valor, auto, onInput, foco),
+    ];
+  }
+  function CampoCorreo(foco) {
+    return [
+      h('label', { class: 'login__label', for: 'login-correo' }, 'Correo'),
       h('input', {
-        id, class: 'login__input', type: 'password', autocomplete: auto, value: valor,
-        'data-foco': foco ? '1' : null, onInput,
+        id: 'login-correo', class: 'login__input', type: 'email', name: 'email',
+        autocomplete: 'username', inputmode: 'email', value: L.correo, 'data-foco': foco ? '1' : null,
+        onInput: (e) => { L.correo = e.target.value; },
       }),
     ];
+  }
+  function ConGoogle() {
+    if (!L.googleVisto) { L.googleVisto = true; C.api.googleListo().then((si) => { if (si) set({ google: true }); }); }
+    return L.google ? [BotonGoogle(), h('div', { class: 'login__o' }, h('span', null, 'o'))] : null;
+  }
+  function Legal() {
+    return h('p', { class: 'login__legal' }, 'Al continuar aceptas los ', h('a', { href: 'terminos.html', target: '_blank', rel: 'noopener' }, 'Términos'), ' y la ', h('a', { href: 'privacidad.html', target: '_blank', rel: 'noopener' }, 'Política de privacidad'), '.');
+  }
+  /* La línea de abajo que lleva a la otra pantalla */
+  function Cambio(pregunta, boton, paso) {
+    return h('p', { class: 'login__cambio' }, pregunta + ' ', h('button', { type: 'button', onClick: () => irA(paso) }, boton));
   }
 
   /* Campo de correo escondido: le dice al gestor de contraseñas de qué cuenta es la clave */
@@ -177,35 +215,47 @@
       L.espera > 0 ? 'Enviar otro código en 0:' + String(L.espera).padStart(2, '0') : 'Enviar otro código');
   }
 
-  function PasoCorreo() {
-    if (!L.googleVisto) { L.googleVisto = true; C.api.googleListo().then((si) => { if (si) set({ google: true }); }); }
-    return h('form', { class: 'login__form', onSubmit: continuarCorreo, novalidate: true },
+  function PasoEntrar() {
+    return h('form', { class: 'login__form', onSubmit: entrar, novalidate: true },
       h('h1', { class: 'login__titulo' }, 'Entra a tu estudio'),
-      h('p', { class: 'login__texto' }, 'Con tu correo, tengas cuenta o no.'),
-      L.google ? BotonGoogle() : null,
-      L.google ? h('div', { class: 'login__o' }, h('span', null, 'o')) : null,
-      h('label', { class: 'login__label', for: 'login-correo' }, 'Correo'),
-      h('input', {
-        id: 'login-correo', class: 'login__input', type: 'email', name: 'email',
-        autocomplete: 'username', inputmode: 'email', value: L.correo, 'data-foco': '1',
-        onInput: (e) => { L.correo = e.target.value; },
-      }),
+      ConGoogle(),
+      CampoCorreo(!L.correo),
+      h('div', { class: 'login__fila' },
+        h('label', { class: 'login__label', for: 'login-clave' }, 'Contraseña'),
+        h('button', { class: 'login__olvido', type: 'button', onClick: () => set({ paso: 'olvido', error: '' }) }, '¿La olvidaste?')),
+      CajaClave('login-clave', L.clave, 'current-password', (e) => { L.clave = e.target.value; }, !!L.correo),
       MensajeError(),
-      Boton(L.cargando ? 'Revisando…' : 'Continuar'),
-      h('p', { class: 'login__legal' }, 'Al continuar aceptas los ', h('a', { href: 'terminos.html', target: '_blank', rel: 'noopener' }, 'Términos'), ' y la ', h('a', { href: 'privacidad.html', target: '_blank', rel: 'noopener' }, 'Política de privacidad'), '.')
+      Boton(L.cargando ? 'Entrando…' : 'Entrar'),
+      Legal(),
+      Cambio('¿No tienes cuenta?', 'Crear cuenta', 'registro')
     );
   }
 
-  function PasoClave() {
-    return h('form', { class: 'login__form', onSubmit: entrar, novalidate: true },
-      h('h1', { class: 'login__titulo' }, 'Escribe tu contraseña'),
-      h('div', { class: 'login__correo' }, L.correo),
-      CorreoOculto(),
-      CampoClave('login-clave', 'Contraseña', L.clave, 'current-password', (e) => { L.clave = e.target.value; }, true),
+  function PasoRegistro() {
+    return h('form', { class: 'login__form', onSubmit: registrar, novalidate: true },
+      h('h1', { class: 'login__titulo' }, 'Crea tu cuenta'),
+      ConGoogle(),
+      h('label', { class: 'login__label', for: 'login-nombre' }, 'Tu nombre'),
+      h('input', { id: 'login-nombre', class: 'login__input', type: 'text', autocomplete: 'name', maxlength: 60, value: L.nombre, 'data-foco': '1', onInput: (e) => { L.nombre = e.target.value; } }),
+      CampoCorreo(false),
+      h('label', { class: 'login__label', for: 'login-registro' }, 'Contraseña'),
+      CajaClave('login-registro', L.clave, 'new-password', (e) => { L.clave = e.target.value; }, false, 'Mínimo 8 caracteres'),
       MensajeError(),
-      Boton(L.cargando ? 'Entrando…' : 'Entrar'),
-      h('button', { class: 'login__link', type: 'button', onClick: pedirRecuperar }, '¿Olvidaste tu contraseña?'),
-      h('button', { class: 'login__link', type: 'button', onClick: otroCorreo }, 'Usar otro correo')
+      Boton(L.cargando ? 'Creando…' : 'Crear mi cuenta'),
+      Legal(),
+      Cambio('¿Ya tienes cuenta?', 'Entrar', 'entrar')
+    );
+  }
+
+  /* Olvidó la contraseña: se pide el correo aquí mismo, ya escrito si venía de entrar */
+  function PasoOlvido() {
+    return h('form', { class: 'login__form', onSubmit: pedirRecuperar, novalidate: true },
+      h('h1', { class: 'login__titulo' }, 'Recupera tu contraseña'),
+      h('p', { class: 'login__texto' }, 'Te enviamos un código a tu correo.'),
+      CampoCorreo(true),
+      MensajeError(),
+      Boton(L.cargando ? 'Enviando…' : 'Enviarme el código'),
+      h('button', { class: 'login__link', type: 'button', onClick: () => irA('entrar') }, 'Volver a entrar')
     );
   }
 
@@ -220,22 +270,6 @@
       CampoClave('login-nueva-2', 'Repite la contraseña', L.clave2, 'new-password', (e) => { L.clave2 = e.target.value; }, false),
       MensajeError(),
       Boton(L.cargando ? 'Guardando…' : 'Crear contraseña y entrar'),
-      h('button', { class: 'login__link', type: 'button', onClick: otroCorreo }, 'Usar otro correo')
-    );
-  }
-
-  function PasoNueva() {
-    return h('form', { class: 'login__form', onSubmit: registrar, novalidate: true },
-      h('h1', { class: 'login__titulo' }, 'Crea tu cuenta'),
-      h('p', { class: 'login__texto' }, 'Es tu primera vez con este correo.'),
-      h('div', { class: 'login__correo' }, L.correo),
-      CorreoOculto(),
-      h('label', { class: 'login__label', for: 'login-nombre' }, 'Tu nombre'),
-      h('input', { id: 'login-nombre', class: 'login__input', type: 'text', autocomplete: 'name', maxlength: 60, value: L.nombre, 'data-foco': '1', onInput: (e) => { L.nombre = e.target.value; } }),
-      CampoClave('login-registro', 'Contraseña', L.clave, 'new-password', (e) => { L.clave = e.target.value; }, false),
-      h('p', { class: 'login__pista' }, 'Mínimo 8 caracteres.'),
-      MensajeError(),
-      Boton(L.cargando ? 'Creando…' : 'Crear mi cuenta'),
       h('button', { class: 'login__link', type: 'button', onClick: otroCorreo }, 'Usar otro correo')
     );
   }
@@ -287,21 +321,20 @@
       h('h1', { class: 'login__titulo' }, 'Cherry abre muy pronto'),
       h('p', { class: 'login__texto' }, 'Todavía no se pueden crear cuentas nuevas. Únete al canal de WhatsApp y te avisamos el día que abra.'),
       h('a', { class: 'login__btn', href: CANAL, target: '_blank', rel: 'noopener', style: 'text-align:center;text-decoration:none' }, 'Unirme al canal'),
-      h('button', { class: 'login__link', type: 'button', onClick: otroCorreo }, 'Usar otro correo')
+      h('button', { class: 'login__link', type: 'button', onClick: otroCorreo }, 'Volver a entrar')
     );
   }
 
-  /* 19-sep (aprobado por Sergio): el mundo del inicio. La estatua del editor se asoma detrás de la tarjeta. */
+  /* 31-oct (aprobado por Sergio): de fondo, el mármol en partículas. Hay otro guardado, assets/inicio/entrar-escultura.webp, por si más adelante rotan. */
   C.LoginScreen = function () {
     const aviso = C.auth && C.auth.aviso;
-    const PASOS = { clave: PasoClave, crear: PasoCrear, nueva: PasoNueva, codigo: PasoCodigo, recuperar: PasoRecuperar, google: PasoGoogle, cerrado: PasoCerrado };
-    const paso = (PASOS[L.paso] || PasoCorreo)();
-    return h('div', { class: 'cl' },
+    const PASOS = { registro: PasoRegistro, olvido: PasoOlvido, crear: PasoCrear, codigo: PasoCodigo, recuperar: PasoRecuperar, google: PasoGoogle, cerrado: PasoCerrado };
+    const paso = (PASOS[L.paso] || PasoEntrar)();
+    return h('div', { class: 'cl cl--entrada' },
       h('section', { class: 'cl-entrar', 'aria-label': 'Entrar a Cherry' },
-        C.imgFija('cl-asoma', 'assets/inicio/editor.webp?v=20260918', { class: 'cl-asoma', alt: '', 'aria-hidden': 'true', draggable: 'false' }),
         h('div', { class: 'cl-tarjeta' },
           Marca(),
-          aviso && L.paso === 'correo' ? h('div', { class: 'login__aviso' }, aviso) : null,
+          aviso && L.paso === 'entrar' ? h('div', { class: 'login__aviso' }, aviso) : null,
           paso
         ),
         h('span', { class: 'cl-pie' }, 'Estudio de contenido con IA')

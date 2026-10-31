@@ -1,6 +1,6 @@
 # La entrada a Cherry (30-oct-2026)
 
-Una sola puerta: con el correo, Cherry sabe qué sigue (`js/components/login.js`, función `servidor/cuenta-entrada.ts`, tablas en `servidor/sql/30-registro.sql`).
+Dos pantallas con todo a la vista (31-oct): **Entrar** (correo y contraseña) y **Crear cuenta** (nombre, correo y contraseña); al entrar, Cherry revisa el correo y sigue el camino que toque. Colores claros del inicio y de fondo el mármol en partículas (`assets/inicio/entrar-marmol.webp`); guardado sin usar: `entrar-escultura.webp`. (`js/components/login.js`, función `servidor/cuenta-entrada.ts`, tablas en `servidor/sql/30-registro.sql`).
 
 | El correo… | Sigue |
 |---|---|
