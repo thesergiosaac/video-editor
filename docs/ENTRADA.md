@@ -21,5 +21,5 @@ y prender «Allow new users to sign up» en Supabase (hace falta para las cuenta
 
 ## Crear cuenta: las tres imágenes (31-oct)
 
-A cada persona le toca una al azar y siempre la misma (`localStorage › cherry-registro-version`): `periodico`, `portatil` o `particulas` (`assets/inicio/registro-*.webp`). Abajo va la franja con las herramientas (`HERRAMIENTAS` en `js/components/login.js`). `app?crear` abre directo Crear cuenta.
-La tabla `registro_versiones` cuenta `vistas` (una por navegador) y `registros` (correo confirmado, o cuenta nueva con Google). Se decide con esos números qué imagen se queda.
+Cada recarga muestra una distinta de la anterior (`localStorage › cherry-registro-version` guarda la última): `periodico`, `portatil` o `particulas` (`assets/inicio/registro-*.webp`). Abajo va la franja con las herramientas (`HERRAMIENTAS` en `js/components/login.js`). `app?crear` abre directo Crear cuenta.
+La tabla `registro_versiones` cuenta `vistas` (una cada vez que se abre la página) y `registros` (correo confirmado, o cuenta nueva con Google). Se decide con esos números qué imagen se queda.

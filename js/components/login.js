@@ -7,22 +7,22 @@
   const CANAL = 'https://whatsapp.com/channel/0029Vb8xw0WCRs1wSMOitV35';
 
   /* Estado local de la pantalla (no va en C.state para no mezclarlo con el editor) */
-  /* (31-oct) Crear cuenta rota entre tres imágenes: a cada persona le toca una y siempre la misma; se cuenta cuántos se registran con cada una */
+  /* (31-oct) Crear cuenta rota entre tres imágenes: cada recarga muestra una distinta de la anterior; se cuenta cuántas veces salió cada una y con cuál se registran */
   const VERSIONES = ['periodico', 'portatil', 'particulas'];
+  let versionActual = null, vistaContada = false;
   function versionRegistro() {
-    let v = null;
-    try { v = localStorage.getItem('cherry-registro-version'); } catch (e) {}
-    if (VERSIONES.includes(v)) return v;
-    v = VERSIONES[Math.floor(Math.random() * VERSIONES.length)];
-    try { localStorage.setItem('cherry-registro-version', v); } catch (e) {}
-    return v;
+    if (versionActual) return versionActual;
+    let anterior = null;
+    try { anterior = localStorage.getItem('cherry-registro-version'); } catch (e) {}
+    const otras = VERSIONES.filter((v) => v !== anterior);
+    versionActual = otras[Math.floor(Math.random() * otras.length)];
+    try { localStorage.setItem('cherry-registro-version', versionActual); } catch (e) {}
+    return versionActual;
   }
-  /* Se cuenta una sola vez por navegador, aunque vuelva a la pantalla */
+  /* Una vista por cada vez que se abre la página, aunque vaya y vuelva entre Entrar y Crear cuenta */
   function contarVista() {
-    try {
-      if (localStorage.getItem('cherry-registro-visto')) return;
-      localStorage.setItem('cherry-registro-visto', '1');
-    } catch (e) { return; }
+    if (vistaContada) return;
+    vistaContada = true;
     C.api.entrada('visto', { version: versionRegistro() });
   }
   const HERRAMIENTAS = ['Edita tus videos', 'Publica por ti en Instagram', 'Responde comentarios y mensajes', 'Desmonta reels virales', 'Escribe tus guiones', 'Te dice qué grabar'];
