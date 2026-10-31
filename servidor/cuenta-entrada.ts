@@ -5,6 +5,8 @@
 //   { accion: 'reenviar', correo, para }                 → otro código (uno cada 45 s)
 //   { accion: 'recuperar', correo }                      → envía el código para cambiar la contraseña
 //   { accion: 'cambiar_clave', correo, codigo, clave }   → guarda la contraseña nueva
+//   { accion: 'visto', version }                         → suma una vista a esa imagen de Crear cuenta
+//   { accion: 'version_google', version, token }         → cuenta nueva con Google: suma un registro a esa imagen
 // El registro abre con cherry_ajustes › registro = "abierto"; mientras tanto solo pueden registrarse los correos de registro_prueba.
 // Google lo atiende Supabase (authorize); esta función no lo toca. Los correos salen por Resend (RESEND_API_KEY) desde cherrysweet.app,
 // nunca desde el correo de Cobra. Las cuentas abiertas por dentro (primer ingreso) siguen por la función primer-ingreso.
@@ -34,6 +36,10 @@ async function admin(metodo: string, ruta: string, cuerpo: unknown) {
   return t ? JSON.parse(t) : null
 }
 
+const VERSIONES = ['periodico', 'portatil', 'particulas']
+const versionDe = (v: unknown) => VERSIONES.includes(String(v)) ? String(v) : null
+/* Contar nunca debe frenar a quien se está registrando */
+const sumaVersion = (v: string | null, campo: 'vistas' | 'registros') => v ? rpc('cherry_suma_version', { v, campo }).catch((e) => console.error('[cuenta-entrada] conteo', String(e).slice(0, 200))) : null
 const correoValido = (c: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c) && c.length <= 200
 const claveValida = (c: string) => c.length >= 8 && c.length <= 72
 async function huella(correo: string, para: string, codigo: string) {
@@ -111,6 +117,17 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'Método no permitido' }, 405)
   try {
     const b = await req.json().catch(() => ({})) as Record<string, unknown>
+    if (b.accion === 'visto') { await sumaVersion(versionDe(b.version), 'vistas'); return json({ ok: true }) }
+    if (b.accion === 'version_google') {
+      const v = versionDe(b.version)
+      const r = await fetch(`${SB}/auth/v1/user`, { headers: { apikey: SRV, Authorization: `Bearer ${String(b.token ?? '')}` } })
+      const u = r.ok ? await r.json() : null
+      if (v && u?.id && !u.user_metadata?.version_registro && Date.now() - Date.parse(u.created_at) < 600000) {
+        await admin('PUT', `/${u.id}`, { user_metadata: { ...u.user_metadata, version_registro: v } })
+        await sumaVersion(v, 'registros')
+      }
+      return json({ ok: true })
+    }
     const correo = String(b.correo ?? '').trim().toLowerCase(), clave = String(b.clave ?? ''), codigo = String(b.codigo ?? '').replace(/\D/g, '')
     const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 60) || 'sin-ip'
     if (!correoValido(correo)) return malo('Escribe un correo válido.')
@@ -126,7 +143,7 @@ Deno.serve(async (req: Request) => {
       if (!claveValida(clave)) return malo('La contraseña debe tener al menos 8 caracteres.')
       const nombre = String(b.nombre ?? '').replace(/\s+/g, ' ').trim().slice(0, 60)
       const tipo = await rpc('cherry_estado_correo', { correo })
-      const datos = { password: clave, email_confirm: false, user_metadata: { nombre, acepto_terminos: new Date().toISOString() }, app_metadata: { origen: 'registro' } }
+      const datos = { password: clave, email_confirm: false, user_metadata: { nombre, acepto_terminos: new Date().toISOString(), version_registro: versionDe(b.version) }, app_metadata: { origen: 'registro' } }
       if (tipo === 'nueva') await admin('POST', '', { email: correo, ...datos })
       else if (tipo === 'sin_confirmar') await admin('PUT', `/${await rpc('cherry_id_correo', { correo })}`, datos)
       else return malo('Ese correo ya tiene cuenta.', { tipo })
@@ -136,7 +153,8 @@ Deno.serve(async (req: Request) => {
     if (b.accion === 'confirmar') {
       const err = await revisarCodigo(correo, 'registro', codigo)
       if (err) return malo(err)
-      await admin('PUT', `/${await rpc('cherry_id_correo', { correo })}`, { email_confirm: true })
+      const u = await admin('PUT', `/${await rpc('cherry_id_correo', { correo })}`, { email_confirm: true })
+      await sumaVersion(versionDe(u?.user_metadata?.version_registro), 'registros')
       return json({ ok: true })
     }
 

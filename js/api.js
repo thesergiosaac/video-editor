@@ -251,7 +251,9 @@
       return !!(d && d.external && d.external.google);
     } catch (_) { return false; }
   }
-  function entrarConGoogle() {
+  function entrarConGoogle(version) {
+    /* Si viene de Crear cuenta se recuerda con qué imagen, para contarla al volver si la cuenta es nueva */
+    try { if (version) localStorage.setItem('cherry-google-version', version); else localStorage.removeItem('cherry-google-version'); } catch (_) {}
     location.href = SUPABASE_URL + '/auth/v1/authorize?provider=google&redirect_to=' + encodeURIComponent(location.origin + '/app');
   }
   /* Al volver de Google: la sesión viene en la dirección (#access_token=…), o el motivo si no se pudo */
@@ -269,6 +271,9 @@
       const user = await r.json();
       if (!r.ok || !user || !user.id) throw new Error('sin usuario');
       guardarSesion({ access_token: token, refresh_token: q.get('refresh_token'), expires_in: Number(q.get('expires_in')) || 3600, user });
+      let version = null;
+      try { version = localStorage.getItem('cherry-google-version'); localStorage.removeItem('cherry-google-version'); } catch (_) {}
+      if (version) entrada('version_google', { version, token });
     } catch (_) { C.auth.aviso = 'No se pudo entrar con Google. Inténtalo de nuevo.'; }
   }
 

@@ -7,7 +7,28 @@
   const CANAL = 'https://whatsapp.com/channel/0029Vb8xw0WCRs1wSMOitV35';
 
   /* Estado local de la pantalla (no va en C.state para no mezclarlo con el editor) */
-  const L = { paso: 'entrar', correo: '', clave: '', clave2: '', nombre: '', codigo: '', para: 'registro', error: '', cargando: false, espera: 0, google: false, googleVisto: false };
+  /* (31-oct) Crear cuenta rota entre tres imágenes: a cada persona le toca una y siempre la misma; se cuenta cuántos se registran con cada una */
+  const VERSIONES = ['periodico', 'portatil', 'particulas'];
+  function versionRegistro() {
+    let v = null;
+    try { v = localStorage.getItem('cherry-registro-version'); } catch (e) {}
+    if (VERSIONES.includes(v)) return v;
+    v = VERSIONES[Math.floor(Math.random() * VERSIONES.length)];
+    try { localStorage.setItem('cherry-registro-version', v); } catch (e) {}
+    return v;
+  }
+  /* Se cuenta una sola vez por navegador, aunque vuelva a la pantalla */
+  function contarVista() {
+    try {
+      if (localStorage.getItem('cherry-registro-visto')) return;
+      localStorage.setItem('cherry-registro-visto', '1');
+    } catch (e) { return; }
+    C.api.entrada('visto', { version: versionRegistro() });
+  }
+  const HERRAMIENTAS = ['Edita tus videos', 'Publica por ti en Instagram', 'Responde comentarios y mensajes', 'Desmonta reels virales', 'Escribe tus guiones', 'Te dice qué grabar'];
+  const ESTRELLA = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="#FFC93C" d="M12 0c1 7 4 10 12 12-8 2-11 5-12 12-1-7-4-10-12-12 8-2 11-5 12-12z"/></svg>';
+
+  const L = { paso: /[?&]crear\b/.test(location.search) ? 'registro' : 'entrar', correo: '', clave: '', clave2: '', nombre: '', codigo: '', para: 'registro', error: '', cargando: false, espera: 0, google: false, googleVisto: false };
 
   function set(patch) {
     Object.assign(L, patch);
@@ -74,7 +95,7 @@
     if (!correoValido(correo)) return set({ error: 'Escribe un correo válido.' });
     if (L.clave.length < 8) return set({ error: 'La contraseña debe tener al menos 8 caracteres.' });
     set({ correo, cargando: true, error: '' });
-    const r = await C.api.entrada('registrar', { correo, clave: L.clave, nombre: L.nombre.trim() });
+    const r = await C.api.entrada('registrar', { correo, clave: L.clave, nombre: L.nombre.trim(), version: versionRegistro() });
     if (r.cerrado) return set({ cargando: false, paso: 'cerrado' });
     if (!r.ok) return set({ cargando: false, error: r.error || 'No se pudo crear la cuenta.' });
     set({ cargando: false, paso: 'codigo', para: 'registro', codigo: '', espera: r.espera || 45 });
@@ -197,7 +218,7 @@
 
   const GOOGLE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.2c0-.8-.1-1.5-.2-2.2H12v4.3h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.8 3.3-8.1z"/><path fill="#34A853" d="M12 23c3 0 5.500-1 7.200-2.700l-3.500-2.700c-1 .7-2.200 1-3.700 1-2.800 0-5.200-1.900-6.100-4.500H2.300v2.800A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.900 14.100a6.600 6.600 0 0 1 0-4.200V7.100H2.300a11 11 0 0 0 0 9.800z"/><path fill="#EA4335" d="M12 5.400c1.600 0 3 .5 4.100 1.600l3.100-3.100A11 11 0 0 0 2.300 7.100l3.600 2.800C6.800 7.300 9.200 5.400 12 5.400z"/></svg>';
   function BotonGoogle() {
-    return h('button', { class: 'login__google', type: 'button', onClick: () => C.api.entrarConGoogle() }, h('span', { html: GOOGLE, style: 'display:flex' }), 'Continuar con Google');
+    return h('button', { class: 'login__google', type: 'button', onClick: () => C.api.entrarConGoogle(L.paso === 'registro' ? versionRegistro() : null) }, h('span', { html: GOOGLE, style: 'display:flex' }), 'Continuar con Google');
   }
   /* Los 6 números: una sola casilla (el celular sugiere el código que llega) pintada como seis cuadritos */
   function CampoCodigo() {
@@ -234,6 +255,7 @@
   function PasoRegistro() {
     return h('form', { class: 'login__form', onSubmit: registrar, novalidate: true },
       h('h1', { class: 'login__titulo' }, 'Crea tu cuenta'),
+      h('p', { class: 'login__mano' }, 'tu primer video va por nuestra cuenta'),
       ConGoogle(),
       h('label', { class: 'login__label', for: 'login-nombre' }, 'Tu nombre'),
       h('input', { id: 'login-nombre', class: 'login__input', type: 'text', autocomplete: 'name', maxlength: 60, value: L.nombre, 'data-foco': '1', onInput: (e) => { L.nombre = e.target.value; } }),
@@ -330,15 +352,19 @@
     const aviso = C.auth && C.auth.aviso;
     const PASOS = { registro: PasoRegistro, olvido: PasoOlvido, crear: PasoCrear, codigo: PasoCodigo, recuperar: PasoRecuperar, google: PasoGoogle, cerrado: PasoCerrado };
     const paso = (PASOS[L.paso] || PasoEntrar)();
-    return h('div', { class: 'cl cl--entrada' },
-      h('section', { class: 'cl-entrar', 'aria-label': 'Entrar a Cherry' },
+    const registro = L.paso === 'registro';
+    if (registro) contarVista();
+    return h('div', { class: 'cl cl--entrada' + (registro ? ' cl--registro' : '') },
+      registro ? h('div', { class: 'cl-regfoto cl-regfoto--' + versionRegistro(), 'aria-hidden': 'true' }) : null,
+      h('section', { class: 'cl-entrar', 'aria-label': registro ? 'Crear tu cuenta en Cherry' : 'Entrar a Cherry' },
         h('div', { class: 'cl-tarjeta' },
           Marca(),
           aviso && L.paso === 'entrar' ? h('div', { class: 'login__aviso' }, aviso) : null,
           paso
         ),
-        h('span', { class: 'cl-pie' }, 'Estudio de contenido con IA')
-      )
+        registro ? null : h('span', { class: 'cl-pie' }, 'Estudio de contenido con IA')
+      ),
+      registro ? h('ul', { class: 'cl-franja' }, HERRAMIENTAS.map((t, n) => h('li', null, n ? h('span', { html: ESTRELLA, style: 'display:flex' }) : null, h('span', null, t)))) : null
     );
   };
 

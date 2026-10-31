@@ -18,3 +18,8 @@ Dos pantallas con todo a la vista (31-oct): **Entrar** (correo y contraseña) y 
 update cherry_ajustes set valor = '"abierto"', actualizado = now() where clave = 'registro';
 ```
 y prender «Allow new users to sign up» en Supabase (hace falta para las cuentas nuevas con Google).
+
+## Crear cuenta: las tres imágenes (31-oct)
+
+A cada persona le toca una al azar y siempre la misma (`localStorage › cherry-registro-version`): `periodico`, `portatil` o `particulas` (`assets/inicio/registro-*.webp`). Abajo va la franja con las herramientas (`HERRAMIENTAS` en `js/components/login.js`). `app?crear` abre directo Crear cuenta.
+La tabla `registro_versiones` cuenta `vistas` (una por navegador) y `registros` (correo confirmado, o cuenta nueva con Google). Se decide con esos números qué imagen se queda.
